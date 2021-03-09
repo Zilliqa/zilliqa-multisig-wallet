@@ -271,13 +271,21 @@ export default {
         this.signTx.version = undefined;
 
         const tx = await zilPay.wallet.sign(this.signTx);
-
-        EventBus.$emit('sign-success', {
-          tx: tx.TranID,
-          id: tx.TranID
+        const observable = zilPay.wallet.observableTransaction(tx.TranID).subscribe(() => {
+          EventBus.$emit('sign-success', {
+            ledger: false,
+            tx: tx,
+            id: tx.TranID
+          });
+          observable.unsubscribe();
         });
       } catch (err) {
-        alert(err.message);
+        alert('ZIlPay: ' + err);
+        EventBus.$emit('sign-success', {
+          ledger: false,
+          tx: null,
+          id: null
+        });
       }
     },
     async zilpayLogin() {

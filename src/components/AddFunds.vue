@@ -25,7 +25,9 @@
     </div>
 
     <div class="buttons">
-      <div v-if="isLoading" class="text-white">Please wait while the transaction is deployed.</div>
+      <div v-if="isLoading" class="loading text-white">
+        <i class="fas fa-spinner fa-spin"></i> Please wait while the transaction is confirming.
+      </div>
       <div v-if="!isLoading && !isSuccess">
         <button class="btn btn-primary mr-4" @click="proceed">Submit</button>
         <button class="btn btn-outline-secondary" @click="$emit('cancel-add-funds')">Cancel</button>
@@ -61,7 +63,7 @@ export default {
   data() {
     return {
       amount: 0,
-      gasPrice: 1000000000,
+      gasPrice: 2000000000,
       gasLimit: 2000,
       isLoading: false,
       isSuccess: false,
@@ -107,7 +109,7 @@ export default {
 
       EventBus.$emit('sign-event', tx);
 
-      this.isLoading = false;
+      // this.isLoading = false;
     },
     async checkForHash(hash) {
       const cid = await this.zilliqa.blockchain.getContractAddressFromTransactionID(hash);
@@ -129,26 +131,33 @@ export default {
     }
   },
   async mounted() {
-    EventBus.$on('sign-success', async tx => {
-      if (tx.ledger !== true) {
-        if (tx.id !== undefined && tx.receipt.success === true) {
-          Swal.fire({
-            type: 'success',
-            html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(tx.id)}">${tx.id}</a>`
-          }).then(() => {
-            window.location.reload();
-          });
+    EventBus.$on('sign-success', async ({ id, ledger }) => {
+      try {
+        const tx = await this.zilliqa.blockchain.getTransaction(id);
+
+        if (ledger !== true) {
+          if (tx && tx.receipt && tx.receipt.success === true) {
+            Swal.fire({
+              type: 'success',
+              html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(id)}">${id}</a>`
+            }).then(() => {
+              window.location.reload();
+            });
+          }
+        } else {
+          if (!tx && tx.receipt && tx.receipt.success === false) {
+            Swal.fire({
+              type: 'success',
+              html: `Transaction has been Rejected sent <a target="_blank" href="${this.viewblock(id)}">${id}</a>`
+            }).then(() => {
+              window.location.reload();
+            });
+          }
         }
-      } else {
-        if (tx.id !== undefined) {
-          Swal.fire({
-            type: 'success',
-            html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(tx.id)}">${tx.id}</a>`
-          }).then(() => {
-            window.location.reload();
-          });
-        }
+      } catch {
+        //
       }
+      this.isLoading = false;
     });
   }
 };

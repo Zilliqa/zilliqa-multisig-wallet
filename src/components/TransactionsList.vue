@@ -7,7 +7,11 @@
         <span>All Transactions</span>
       </div>
     </div>
-    <div v-for="(transaction,index) in transactions" :key="index" class="content transactions-list">
+    <div
+      v-for="(transaction,index) in transactions"
+      :key="index"
+      class="content transactions-list"
+    >
       <Transaction
         :transaction="transaction"
         :wallet="address"
@@ -30,9 +34,11 @@ import { validation } from "@zilliqa-js/util";
 import { fromBech32Address } from "@zilliqa-js/crypto";
 
 import Transaction from "@/components/Transaction.vue";
+import ZIlpayMixin from '@/mixins/zilpay';
 
 export default {
   name: "TransactionsList",
+  mixins: [ZIlpayMixin],
   props: ["address", "signatures_need", "network"],
   components: {
     Transaction
@@ -52,13 +58,13 @@ export default {
       address = fromBech32Address(address);
     }
 
+    if (this.network.name === "ZilPay") {
+      this.zilliqa = await this.__getZilPay();
+    } else {
+      this.zilliqa = new Zilliqa(this.network.url);
+    }
 
-    const zilliqa = new Zilliqa(this.network.url);
-    this.zilliqa = zilliqa;
-
-    const state = await zilliqa.blockchain.getSmartContractState(address);
-
-    console.log(state.result);
+    const state = await this.zilliqa.blockchain.getSmartContractState(address);
 
     if (state.result.transactions !== undefined) {
       const transactions = Object.keys(state.result.transactions).map(

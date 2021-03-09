@@ -48,7 +48,8 @@ export default {
       isSuccess: false,
       isLoading: false,
       deployedWallet: null,
-      owners_list: []
+      owners_list: [],
+      zilliqa: null
     };
   },
   components: {
@@ -84,9 +85,13 @@ export default {
           address = fromBech32Address(address);
         }
 
-        const zilliqa = new Zilliqa(this.network.url);
+        if (this.network.name === "ZilPay") {
+          this.zilliqa = window['zilPay'];
+        } else {
+          this.zilliqa = new Zilliqa(this.network.url);
+        }
 
-        const init = await zilliqa.blockchain.getSmartContractInit(address);
+        const init = await this.zilliqa.blockchain.getSmartContractInit(address);
         const signatures = init.result.find(item => item.vname === 'required_signatures');
         const owners = init.result.find(item => item.vname === 'owners_list');
 
