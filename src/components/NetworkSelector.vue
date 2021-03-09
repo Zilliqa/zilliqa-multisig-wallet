@@ -9,7 +9,7 @@
         <span>{{ selectedNetwork.name }}</span>
       </div>
 
-      <div class="dropdown-list">
+      <div v-show="selectedNetwork.name !== 'ZilPay'" class="dropdown-list">
         <a
           v-for="(network,index) in networks"
           :key="index"

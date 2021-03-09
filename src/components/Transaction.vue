@@ -101,7 +101,7 @@ export default {
     canExecute() {
       return this.transaction.signatures_count >= this.signatures_need;
     },
-    isOwner() {
+    isOwner(){
       let found =  this.owners.find(owner => owner === this.personalAddress.toLowerCase());
       return found;
     }

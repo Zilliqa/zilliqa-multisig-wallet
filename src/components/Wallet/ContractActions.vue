@@ -29,10 +29,10 @@ export default {
      ...mapGetters("general", {
       personalAddress: "personalAddress"
     }),
-    formattedBalance() {
+    formattedBalance(){
       return numbro(this.balance).format({ thousandSeparated: true, mantissa:3   });
     },
-    isOwner() {
+    isOwner(){
       const personal = toBech32Address(this.personalAddress);
       let found =  this.owners_list.find(owner => owner.address === personal);
 

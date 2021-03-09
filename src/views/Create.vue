@@ -88,8 +88,11 @@ import { fromBech32Address, toBech32Address } from '@zilliqa-js/crypto';
 import { mapGetters } from 'vuex';
 import SuccessScreen from '@/components/SuccessScreen.vue';
 
+import ZIlpayMixin from '@/mixins/zilpay';
+
 export default {
   name: 'CreateWallet',
+  mixins: [ZIlpayMixin],
   components: {
     SuccessScreen
   },
@@ -205,11 +208,11 @@ export default {
 
         // Get Minimum Gas Price from blockchain
         const minGasPrice = await this.zilliqa.blockchain.getMinimumGasPrice();
-        const myGasPrice = new BN(this.gasPrice); // Gas Price that will be used by all transactions
+        let myGasPrice = new BN(this.gasPrice); // Gas Price that will be used by all transactions
         const isGasSufficient = myGasPrice.gte(new BN(minGasPrice.result)); // Checks if your gas price is less than the minimum gas price
 
         if (!isGasSufficient)
-          throw `Gas price is set too low. Minimum gas price: ${minGasPrice.result}`;
+          myGasPrice = new BN(minGasPrice.result);
 
         let ownersTree = this.buildOwnersTree([...this.owners]);
 
@@ -716,7 +719,6 @@ end`,
           data: JSON.stringify(init).replace(/\\"/g, '"'),
           signature: ''
         });
-
         EventBus.$emit('sign-event', tx);
       } catch (error) {
         Swal.fire({
@@ -741,7 +743,11 @@ end`,
     this.owners.push({ address: toBech32Address(this.personalAddress) });
   },
   async mounted() {
-    this.zilliqa = new Zilliqa(this.network.url);
+    if (this.network.name === "ZilPay") {
+      this.zilliqa = window['zilPay'];
+    } else {
+      this.zilliqa = new Zilliqa(this.network.url);
+    }
 
     EventBus.$on('sign-success', async tx => {
       if (tx.ledger !== true) {
