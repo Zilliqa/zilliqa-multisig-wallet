@@ -188,9 +188,7 @@ export default {
         };
 
         this.loading = 'Please sign transaction from the Ledger Device';
-        const signed = await zil.signTxn(this.keystore, newP);
-        const signature = signed.sig;
-
+        const signature = await zil.signTxn(this.keystore, newP);
         const newtx = {
           id: '1',
           jsonrpc: '2.0',
@@ -211,7 +209,6 @@ export default {
             }
           ]
         };
-
         const response = await fetch(this.network.url, {
           method: 'POST',
           mode: 'cors',
@@ -222,7 +219,6 @@ export default {
           },
           body: JSON.stringify(newtx)
         });
-
         let data = await response.json();
 
         if (data.result.TranID !== undefined) {

@@ -250,7 +250,8 @@ export default {
   },
   methods: {
     ...mapMutations("general", [
-      'setNetwork'
+      'setNetwork',
+      'setAddress'
     ]),
     onCloseSign() {
       this.signModal = false;
@@ -308,6 +309,9 @@ export default {
           login_type: this.loginType,
           address: zilPay.wallet.defaultAccount.base16
         });
+        zilPay.wallet.observableAccount().subscribe((account) => {
+          this.setAddress(account.base16);
+        });
       } catch {
         alert('ZilPay is not installed');
       }
@@ -324,6 +328,16 @@ export default {
       document.documentElement.style.display = 'block';
     } else {
       top.location = self.location;
+    }
+
+    if (this.network.name === 'ZilPay') {
+      this
+        .__getZilPay()
+        .then((zilPay) => {
+          zilPay.wallet.observableAccount().subscribe((account) => {
+            this.setAddress(account.base16);
+          });
+        })
     }
 
     EventBus.$on("sign-event", txParams => {
