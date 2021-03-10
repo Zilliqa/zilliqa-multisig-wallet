@@ -236,7 +236,7 @@ export default {
             value: `${this.signatures}`
           }
         ];
-        const url = 'https://raw.githubusercontent.com/Xfers/StraitsX-tokens/master/Zilliqa/contracts/wallet.scilla';
+        const url = 'https://gist.githubusercontent.com/evesnow91/157f8dd20531e0cb2ab186f56fbc94c5/raw/c2001b6a4c30b34e4ca8bad49f34ef4779a8b527/zrc2-multisig-wallet.scilla';
         const res = await fetch(url);
         const code = await res.text();
         const tx = this.zilliqa.transactions.new({
