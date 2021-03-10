@@ -2,9 +2,8 @@
   <div class="wallet">
     <h1 class="title">My Wallet</h1>
     <h2 class="subtitle text-white">{{ bech32Address }}</h2>
-
     <div class="wallet-details mt-5">
-      <div class="transactions-container" v-if="!addFunds && !newTransaction">
+      <div class="transactions-container" v-if="!addFunds && !newTransaction && !addToken">
         <transactions-list :address="this.$route.params.address" :signatures_need="this.wallet.signatures" :network="network"></transactions-list>
       </div>
       <add-funds
@@ -13,7 +12,11 @@
         :zilliqa="zilliqa"
         v-on:cancel-add-funds="onCancelAddFunds"
         v-if="addFunds"
-      ></add-funds>
+      />
+      <add-token
+        v-if="addToken"
+        v-on:cancel-add-token="onCancelAddToekn"
+      />
       <new-transaction :zilliqa="zilliqa" :address="address" v-on:cancel-new-transaction="onCancelNewTransaction" v-if="newTransaction"></new-transaction>
       <div class="sidebar">
         <contract-actions
@@ -22,7 +25,8 @@
           class="mb-4"
           v-on:add-funds="onAddFunds"
           v-on:new-transaction="onNewTransaction"
-        ></contract-actions>
+          v-on:add-token="onAddToken"
+        />
         <contract-owners :owners="wallet.owners_list" :signatures="wallet.signatures"></contract-owners>
       </div>
     </div>
@@ -38,6 +42,7 @@ import { toBech32Address, fromBech32Address } from "@zilliqa-js/crypto";
 
 import TransactionsList from "@/components/TransactionsList";
 import AddFunds from "@/components/AddFunds";
+import AddToken from "@/components/AddToken";
 
 import ContractActions from "@/components/Wallet/ContractActions";
 import ContractOwners from "@/components/Wallet/ContractOwners";
@@ -51,6 +56,7 @@ export default {
     ContractActions,
     ContractOwners,
     AddFunds,
+    AddToken,
     NewTransaction
   },
   data() {
@@ -65,6 +71,7 @@ export default {
         signatures: null
       },
       addFunds: false,
+      addToken: false,
       newTransaction: false
     };
   },
@@ -82,9 +89,20 @@ export default {
     onAddFunds() {
       this.newTransaction = false;
       this.addFunds = true;
+      this.addToken = false;
+    },
+    onAddToken() {
+      this.newTransaction = false;
+      this.addFunds = false;
+      this.addToken = true;
     },
     onCancelAddFunds() {
       this.addFunds = false;
+    },
+    onCancelAddToekn() {
+      this.newTransaction = false;
+      this.addFunds = false;
+      this.addToken = false;
     },
     onNewTransaction() {
       this.addFunds = false;
@@ -111,7 +129,6 @@ export default {
         this.bech32Address = toBech32Address(address);
         this.address = address;
       }
-
 
       const contract = await this.zilliqa.blockchain.getSmartContractInit(
         this.address
