@@ -15,6 +15,7 @@
       />
       <add-token
         v-if="addToken"
+        :wallet="address"
         v-on:cancel-add-token="onCancelAddToekn"
       />
       <new-transaction :zilliqa="zilliqa" :address="address" v-on:cancel-new-transaction="onCancelNewTransaction" v-if="newTransaction"></new-transaction>

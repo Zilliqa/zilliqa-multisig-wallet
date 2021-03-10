@@ -3,14 +3,27 @@
     <h2 class="subtitle mb-5">Add Token</h2>
     <div class="big-form mb-5">
       Token address:
-      <input type="number" min="0" v-model="amount" />
+      <input
+        type="text"
+        v-model="address"
+        @input="error = false"
+      />
     </div>
+    <h3 v-if="error" class="err-message text-danger">
+      Incorect token
+    </h3>
     <div class="buttons">
       <div v-if="isLoading" class="loading text-white">
-        <i class="fas fa-spinner fa-spin"></i> Please wait while the transaction is confirming.
+        <i class="fas fa-spinner fa-spin"></i> Please wait a bit.
       </div>
       <div v-if="!isLoading">
-        <button class="btn btn-primary mr-4" @click="proceed">Submit</button>
+        <button
+          class="btn btn-primary mr-4"
+          :disabled="!isEnable"
+          @click="proceed"
+        >
+          Submit
+        </button>
         <button class="btn btn-outline-secondary" @click="$emit('cancel-add-token')">Cancel</button>
       </div>
     </div>
@@ -18,34 +31,89 @@
 </template>
 
 <script>
-import Swal from 'sweetalert2';
 import { mapGetters } from 'vuex';
 import { bytes, BN, Long, units } from '@zilliqa-js/util';
-
-import SuccessScreen from '@/components/SuccessScreen';
-import ViewblockLink from '@/components/ViewblockLink';
+import { fromBech32Address } from "@zilliqa-js/crypto";
+import { Zilliqa } from "@zilliqa-js/zilliqa";
 
 export default {
   name: 'AddToken',
-  props: ['address', 'bech32', 'zilliqa'],
+  props: ['wallet'],
   data() {
     return {
-      isLoading: false
+      isLoading: false,
+      error: false,
+      zilliqa: null,
+      address: null
     };
   },
   components: {
-    SuccessScreen,
-    ViewblockLink
   },
   computed: {
     ...mapGetters('general', {
       network: 'selectedNetwork',
       personalAddress: 'personalAddress'
-    })
+    }),
+
+    isEnable() {
+      try {
+        fromBech32Address(this.address);
+
+        return true;
+      } catch {
+        return false;
+      }
+    }
   },
   methods: {
-    proceed() {
+    async getBalance(contract) {
+      const field = 'balances';
+      const wallet = String(this.wallet).toLowerCase();
+      try {
+        const { result } = await this.zilliqa.blockchain.getSmartContractSubState(
+          contract,
+          field,
+          [wallet]
+        );
 
+        if (result && result[field] && result[field][wallet]) {
+          return result[field][wallet];
+        }
+
+        return '0';
+      } catch {
+        return '0';
+      }
+    },
+    async proceed() {
+      this.isLoading = true;
+
+      try {
+        const base16 = fromBech32Address(this.address);
+        const balance = await this.getBalance(base16);
+        const initRes = await this.zilliqa.blockchain.getSmartContractInit(base16);
+        const init = initRes.result;
+        const symbol = init.find((el) => el.vname === 'symbol');
+        const name = init.find((el) => el.vname === 'name');
+        const decimals = init.find((el) => el.vname === 'decimals');
+
+        if (!symbol || !name || !decimals) {
+          throw new Error();
+        }
+
+        console.log(balance);
+      } catch {
+        this.error = true;
+      }
+
+      this.isLoading = false;
+    }
+  },
+  mounted() {
+    if (this.network.name === "ZilPay") {
+      this.zilliqa = window['zilPay'];
+    } else {
+      this.zilliqa = new Zilliqa(this.network.url);
     }
   }
 };
@@ -58,5 +126,9 @@ export default {
 
 .toggle-advanced-options {
   cursor: pointer;
+}
+
+.err-message {
+  min-width: 200px;
 }
 </style>
