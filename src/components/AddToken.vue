@@ -31,8 +31,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-import { bytes, BN, Long, units } from '@zilliqa-js/util';
+import { mapGetters, mapMutations } from 'vuex';
 import { fromBech32Address } from "@zilliqa-js/crypto";
 import { Zilliqa } from "@zilliqa-js/zilliqa";
 
@@ -66,6 +65,9 @@ export default {
     }
   },
   methods: {
+    ...mapMutations('general', [
+      'addToken'
+    ]),
     async getBalance(contract) {
       const field = 'balances';
       const wallet = String(this.wallet).toLowerCase();
@@ -90,18 +92,24 @@ export default {
 
       try {
         const base16 = fromBech32Address(this.address);
-        const balance = await this.getBalance(base16);
         const initRes = await this.zilliqa.blockchain.getSmartContractInit(base16);
         const init = initRes.result;
-        const symbol = init.find((el) => el.vname === 'symbol');
-        const name = init.find((el) => el.vname === 'name');
-        const decimals = init.find((el) => el.vname === 'decimals');
+        const symbol = init.find((el) => el.vname === 'symbol').value;
+        const name = init.find((el) => el.vname === 'name').value;
+        const decimals = init.find((el) => el.vname === 'decimals').value;
 
         if (!symbol || !name || !decimals) {
           throw new Error();
         }
 
-        console.log(balance);
+        this.addToken({
+          address: base16,
+          name,
+          symbol,
+          decimals
+        });
+
+        this.$emit('cancel-add-token');
       } catch {
         this.error = true;
       }

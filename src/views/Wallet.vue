@@ -2,6 +2,18 @@
   <div class="wallet">
     <h1 class="title">My Wallet</h1>
     <h2 class="subtitle text-white">{{ bech32Address }}</h2>
+    <div
+      v-if="address"
+      class="tokens"
+    >
+      <TokenCard
+        v-for="(el, index) of tokens"
+        :key="index"
+        :token="el"
+        :network="network"
+        :address="address"
+      />
+    </div>
     <div class="wallet-details mt-5">
       <div class="transactions-container" v-if="!addFunds && !newTransaction && !addToken">
         <transactions-list :address="this.$route.params.address" :signatures_need="this.wallet.signatures" :network="network"></transactions-list>
@@ -36,7 +48,7 @@
 
 <script>
 import Swal from "sweetalert2";
-import { mapGetters } from "vuex";
+import { mapGetters, mapState } from "vuex";
 
 import { Zilliqa } from "@zilliqa-js/zilliqa";
 import { toBech32Address, fromBech32Address } from "@zilliqa-js/crypto";
@@ -44,6 +56,7 @@ import { toBech32Address, fromBech32Address } from "@zilliqa-js/crypto";
 import TransactionsList from "@/components/TransactionsList";
 import AddFunds from "@/components/AddFunds";
 import AddToken from "@/components/AddToken";
+import TokenCard from "@/components/TokenCard";
 
 import ContractActions from "@/components/Wallet/ContractActions";
 import ContractOwners from "@/components/Wallet/ContractOwners";
@@ -58,6 +71,7 @@ export default {
     ContractOwners,
     AddFunds,
     AddToken,
+    TokenCard,
     NewTransaction
   },
   data() {
@@ -77,6 +91,9 @@ export default {
     };
   },
   computed: {
+    ...mapState('general', [
+      'tokens'
+    ]),
     ...mapGetters("general", {
       network: "selectedNetwork",
       personalAddress: "personalAddress",
@@ -177,3 +194,10 @@ export default {
   }
 };
 </script>
+
+
+<style lang="scss">
+.tokens {
+  display: flex;
+}
+</style>

@@ -31,7 +31,13 @@ const state = {
     ],
     keystore: null,
     address: null,
-    login_type: null
+    login_type: null,
+    tokens: [{
+        address: null,
+        name: 'Zilliqa',
+        symbol: 'ZIL',
+        decimals: 12
+    }]
 };
 
 const getters = {
@@ -70,6 +76,13 @@ const actions = {
 
 
 const mutations = {
+    addToken(state, payload) {
+        const found = state.tokens.find((t) => t.symbol === payload.symbol);
+
+        if (!found) {
+            state.tokens.push(payload);
+        }
+    },
     setNetwork(state, payload) {
         state.network = payload;
     },
