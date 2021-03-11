@@ -87,6 +87,13 @@ import ViewblockLink from '@/components/ViewblockLink';
 
 Big.PE = 99;
 
+// IncreaseAllowance
+// DecreaseAllowance
+// Burn
+// Mint
+// Transfer
+// TransferFrom
+
 export default {
   name: 'NewTransaction',
   data() {
