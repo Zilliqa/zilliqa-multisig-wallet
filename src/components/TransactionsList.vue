@@ -64,26 +64,23 @@ export default {
       this.zilliqa = new Zilliqa(this.network.url);
     }
 
-    const state = await this.zilliqa.blockchain.getSmartContractState(address);
+    const { result } = await this.zilliqa.blockchain.getSmartContractState(address);
 
-    if (state.result.transactions !== undefined) {
-      const transactions = Object.keys(state.result.transactions).map(
-        function(key) {
-          return {
-            key: key,
-            destination: state.result.transactions[key].arguments[0],
-            amount: state.result.transactions[key].arguments[1],
-            third: state.result.transactions[key].arguments[2],
-            signatures: state.result.signatures[key],
-            signatures_count: state.result.signature_counts[key]
-          };
-        }
-      );
+    if (result && result.transactions && result.signatures && result.signature_counts) {
+      const transactions = Object.keys(result.transactions).map((key) =>({
+        key: key,
+        type: result.transactions[key].constructor,
+        destination: result.transactions[key].arguments[0],
+        amount: result.transactions[key].arguments[1],
+        third: result.transactions[key].arguments[2],
+        signatures: result.signatures[key],
+        signatures_count: result.signature_counts[key]
+      }));
 
       this.transactions = transactions;
-      this.owners = Object.keys(state.result.owners);
-      this.signature_counts = state.result.signature_counts;
-      this.signatures = Object.values(state.result.signatures);
+      this.owners = Object.keys(result.owners);
+      this.signature_counts = result.signature_counts;
+      this.signatures = Object.values(result.signatures);
     }
   }
 };

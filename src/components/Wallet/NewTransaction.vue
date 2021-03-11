@@ -25,7 +25,7 @@
         Gas limit:
         <input type="number" v-model="gasLimit" />
       </div>
-      <div class="option">
+      <div v-if="token.symbol === 'ZIL'" class="option">
         Tag:
         <input type="text" v-model="tag" />
       </div>
@@ -34,7 +34,13 @@
     <div class="buttons">
       <div v-if="isLoading" class="text-white">Please wait while the transaction is deployed.</div>
       <div v-if="!isLoading && !isSuccess">
-        <button class="btn btn-primary mr-4" @click="proceed">Submit</button>
+        <button
+          class="btn btn-primary mr-4"
+          :disabled="!isEnable"
+          @click="proceed"
+        >
+          Submit
+        </button>
         <button class="btn btn-outline-secondary" @click="$emit('cancel-new-transaction')">
           Cancel
         </button>
@@ -52,11 +58,15 @@
 
 <script>
 import Swal from 'sweetalert2';
-import { validation, units, bytes, BN, Long } from '@zilliqa-js/util';
+import Big from 'big.js';
+
+import { validation, bytes, BN, Long } from '@zilliqa-js/util';
 import { fromBech32Address } from '@zilliqa-js/crypto';
 import { mapGetters } from 'vuex';
 import SuccessScreen from '@/components/SuccessScreen';
 import ViewblockLink from '@/components/ViewblockLink';
+
+Big.PE = 99;
 
 export default {
   name: 'NewTransaction',
@@ -76,11 +86,69 @@ export default {
     SuccessScreen,
     ViewblockLink
   },
-  props: ['zilliqa', 'address'],
+  props: ['zilliqa', 'address', 'token'],
   computed: {
     ...mapGetters('general', {
       network: 'selectedNetwork'
-    })
+    }),
+    isEnable() {
+      try {
+        fromBech32Address(this.destination);
+
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    data() {
+      const _decimals = Big(10).pow(Number(this.token.decimals));
+      const _amount = Big(this.amount);
+      const value = _amount.mul(_decimals).round();
+
+      if (this.token.symbol === 'ZIL') {
+        return JSON.stringify({
+          _tag: 'SubmitNativeTransaction',
+          params: [
+            {
+              vname: 'recipient',
+              type: 'ByStr20',
+              value: fromBech32Address(this.destination).toLowerCase()
+            },
+            {
+              vname: 'amount',
+              type: 'Uint128',
+              value: String(value)
+            },
+            {
+              vname: 'tag',
+              type: 'String',
+              value: `${this.tag}`
+            }
+          ]
+        });
+      }
+
+      return JSON.stringify({
+        _tag: 'SubmitCustomTransferTransaction',
+        params: [
+          {
+            vname: 'proxyTokenContract',
+            type: 'ByStr20',
+            value: String(this.token.address).toLowerCase()
+          },
+          {
+            vname: 'to',
+            type: 'ByStr20',
+            value: fromBech32Address(this.destination).toLowerCase()
+          },
+          {
+            vname: 'amount',
+            type: 'Uint128',
+            value: String(value)
+          }
+        ]
+      });
+    }
   },
   methods: {
     checkAddress() {
@@ -104,34 +172,15 @@ export default {
     },
     async proceed() {
       this.isLoading = true;
+
       const VERSION = bytes.pack(this.network.chainId, this.network.msgVersion);
-
-      let destination = this.destination;
-
-      if (validation.isBech32(destination)) {
-        destination = fromBech32Address(destination);
-      }
-
-      let amount = units.toQa(this.amount, units.Units.Zil);
-
       let tx = this.zilliqa.transactions.new({
         version: VERSION,
         toAddr: this.address,
         amount: new BN(0),
         gasPrice: new BN(this.gasPrice),
         gasLimit: Long.fromNumber(this.gasLimit),
-        data: JSON.stringify({
-          _tag: 'SubmitTransaction',
-          params: [
-            {
-              vname: 'recipient',
-              type: 'ByStr20',
-              value: `${destination}`
-            },
-            { vname: 'amount', type: 'Uint128', value: `${amount}` },
-            { vname: 'tag', type: 'String', value: `${this.tag}` }
-          ]
-        })
+        data: this.data
       });
 
       EventBus.$emit('sign-event', tx);
@@ -140,8 +189,12 @@ export default {
     },
     viewblock(txid) {
       let link = `https://viewblock.io/zilliqa/tx/${txid}`;
+
+      if (this.network.name === "ZilPay") {
+        link += `?network=${this.zilliqa.wallet.net}`;
+      }
       
-      if(this.network.url === 'https://dev-api.zilliqa.com') {
+      if (this.network.url === 'https://dev-api.zilliqa.com') {
         link += '?network=testnet';
       }
 
@@ -150,7 +203,14 @@ export default {
   },
   async mounted() {
     EventBus.$on('sign-success', async tx => {
-      if (tx.ledger !== true) {
+      if (tx.error) {
+        Swal.fire({
+          type: 'Error',
+          html: 'tx.error'
+        }).then(() => {
+          window.location.reload();
+        });
+      } else if (tx.ledger !== true) {
         if (tx.id !== undefined && tx.receipt.success === true) {
           Swal.fire({
             type: 'success',

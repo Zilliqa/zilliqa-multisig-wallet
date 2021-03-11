@@ -1,11 +1,11 @@
 <template>
   <div class="transaction mb-4" v-if="!isLoading">
     <div class="item">
-      <div class="font-weight-bold">Tx ID.</div>
+      <div class="font-weight-bold">ID</div>
       <div class="address-text">{{ transaction.key }}</div>
     </div>
     <div class="item transfer">
-      <div class="font-weight-bold">Transfer</div>
+      <div class="font-weight-bold">{{ transaction.type }}</div>
       <div class="details d-flex align-items-center">
         <div class="mr-2 address-text">{{ wallet }}</div>
         <i class="fas fa-arrow-right"></i>
@@ -81,6 +81,7 @@ export default {
       personalAddress: "personalAddress"
     }),
     amount() {
+      console.log(this.transaction)
       return numbro(
         units.fromQa(new BN(this.transaction.amount), units.Units.Zil)
       ).format();

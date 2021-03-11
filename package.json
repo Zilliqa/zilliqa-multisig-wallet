@@ -15,6 +15,7 @@
     "@zilliqa-js/crypto": "^2.2.1",
     "@zilliqa-js/util": "^2.2.0",
     "@zilliqa-js/zilliqa": "^2.2.1",
+    "big.js": "^6.0.3",
     "bn.js": "^5.0.0",
     "bootstrap": "^4.3.1",
     "core-js": "^2.6.5",

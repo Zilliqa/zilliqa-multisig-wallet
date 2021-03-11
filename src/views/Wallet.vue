@@ -39,8 +39,9 @@
       <new-transaction
         :zilliqa="zilliqa"
         :address="address"
+        :token="selectedToken"
         v-on:cancel-new-transaction="onCancelNewTransaction"
-        v-if="newTransaction"
+        v-if="newTransaction && selectedToken"
       />
       <div class="sidebar">
         <contract-actions

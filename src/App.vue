@@ -285,7 +285,8 @@ export default {
         EventBus.$emit('sign-success', {
           ledger: false,
           tx: null,
-          id: null
+          id: null,
+          error: err
         });
       }
     },
