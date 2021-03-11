@@ -244,3 +244,12 @@ export default {
   }
 };
 </script>
+
+<style lang="scss">
+
+@media only screen and (max-width: 600px) {
+  .transaction {
+    // max-width: 300px;
+  }
+}
+</style>

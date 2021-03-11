@@ -217,5 +217,7 @@ export default {
 <style lang="scss">
 .tokens {
   display: flex;
+  flex-wrap: wrap;
+  max-width: 760px;
 }
 </style>
