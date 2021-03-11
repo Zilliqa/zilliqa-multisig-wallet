@@ -15,6 +15,7 @@
         :address="address"
         @select="onSelectedToken"
       />
+      <AddTokenCard @add="onAddToken" />
     </div>
     <div class="wallet-details mt-5">
       <div class="transactions-container" v-if="!addFunds && !newTransaction && !addToken">
@@ -50,7 +51,6 @@
           :owners_list="wallet.owners_list"
           class="mb-4"
           v-on:add-funds="onAddFunds"
-          v-on:add-token="onAddToken"
         />
         <contract-owners :owners="wallet.owners_list" :signatures="wallet.signatures"></contract-owners>
       </div>
@@ -68,6 +68,7 @@ import { toBech32Address, fromBech32Address } from "@zilliqa-js/crypto";
 import TransactionsList from "@/components/TransactionsList";
 import AddFunds from "@/components/AddFunds";
 import AddToken from "@/components/AddToken";
+import AddTokenCard from "@/components/AddTokenCard";
 import TokenCard from "@/components/TokenCard";
 
 import ContractActions from "@/components/Wallet/ContractActions";
@@ -83,6 +84,7 @@ export default {
     ContractOwners,
     AddFunds,
     AddToken,
+    AddTokenCard,
     TokenCard,
     NewTransaction
   },
@@ -131,6 +133,7 @@ export default {
       this.newTransaction = false;
       this.addFunds = false;
       this.addToken = true;
+      this.selectedToken = null;
     },
     onCancelAddFunds() {
       this.addFunds = false;

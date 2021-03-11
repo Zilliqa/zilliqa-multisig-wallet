@@ -4,9 +4,6 @@
       <button href="#" class="btn btn-outline-primary text-primary btn-block" @click="$emit('add-funds')">
         <i class="fas fa-long-arrow-alt-down"></i> Add funds
       </button>
-      <button href="#" class="btn btn-outline-primary text-primary btn-block" @click="$emit('add-token')">
-        Add token
-      </button>
       {{ address }}
     </div>
   </div>
