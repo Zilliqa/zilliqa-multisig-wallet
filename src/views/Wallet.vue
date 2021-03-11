@@ -122,6 +122,7 @@ export default {
     onSelectedToken(token) {
       this.selectedToken = token;
       this.addFunds = false;
+      this.addToken = false;
       this.newTransaction = true;
     },
     onAddFunds() {
