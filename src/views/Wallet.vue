@@ -17,7 +17,7 @@
       />
       <AddTokenCard @add="onAddToken" />
     </div>
-    <div class="wallet-details mt-5">
+    <div class="wallet-details">
       <div class="transactions-container" v-if="!addFunds && !newTransaction && !addToken">
         <transactions-list
           :address="this.$route.params.address"
@@ -219,5 +219,21 @@ export default {
   display: flex;
   flex-wrap: wrap;
   max-width: 760px;
+}
+
+.wallet-details {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.sidebar {
+  max-width: 300px;
+}
+
+@media only screen and (max-width: 1300px) {
+  .sidebar {
+    margin-top: 2rem;
+  }
 }
 </style>

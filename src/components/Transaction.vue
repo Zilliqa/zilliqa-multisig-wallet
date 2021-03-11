@@ -90,7 +90,7 @@ export default {
     }),
     amount() {
       if (this.transaction.token.symbol !== 'ZIL') {
-        const [to, amount] = this.transaction.amount.arguments;
+        const [, amount] = this.transaction.amount.arguments;
         const _decimals = Big(10).pow(Number(this.transaction.token.decimals));
         const _amount = Big(amount);
         const value = _amount.div(_decimals);
@@ -246,10 +246,10 @@ export default {
 </script>
 
 <style lang="scss">
-
-@media only screen and (max-width: 600px) {
-  .transaction {
-    // max-width: 300px;
-  }
+.transaction {
+  max-width: 540px;
+}
+.transfer {
+  max-width: 200px;
 }
 </style>

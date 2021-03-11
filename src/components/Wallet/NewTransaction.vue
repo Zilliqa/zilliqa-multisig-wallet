@@ -1,17 +1,36 @@
 <template>
   <div class="add-funds-form" v-if="!isSuccess">
     <h2 class="subtitle mb-5">New Transaction</h2>
-
-    <div class="big-form mb-5">
-      Destination:
-      <div class="d-flex flex-column">
-        <input type="text" class="d-block" v-model="destination" @change="checkAddress" />
-        <div class="text-danger" v-if="destinationError">{{ destinationError }}</div>
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">
+          {{ token.symbol }}
+        </span>
       </div>
-      Amount (ZIL):
-      <input type="number" min="0" v-model="amount" @change="checkAmount" />
+      <input
+        class="form-control"
+        placeholder="Amount"
+        aria-label="Amount"
+        type="number"
+        min="0"
+        v-model="amount"
+        @change="checkAmount"
+      >
     </div>
-
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">zil1</span>
+      </div>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Destination"
+        aria-label="Destination"
+        v-model="destination"
+        @change="checkAddress"
+      >
+      <div class="text-danger" v-if="destinationError">{{ destinationError }}</div>
+    </div>
     <h2 class="subtitle toggle-advanced-options mb-4" @click="toggleAdvancedOptions">
       Advanced options <i class="fas fa-chevron-down"></i>
     </h2>

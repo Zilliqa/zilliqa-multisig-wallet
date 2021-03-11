@@ -1,13 +1,18 @@
 <template>
   <div class="add-funds-form">
     <h2 class="subtitle mb-5">Add Token</h2>
-    <div class="big-form mb-5">
-      Token address:
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">zil1</span>
+      </div>
       <input
         type="text"
+        class="form-control"
+        placeholder="Token address"
+        aria-label="Token address"
         v-model="address"
         @input="error = false"
-      />
+      >
     </div>
     <h3 v-if="error" class="err-message text-danger">
       Incorect token

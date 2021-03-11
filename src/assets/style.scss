@@ -457,12 +457,6 @@ p {
       }
     }
   }
-
-  .wallet-details {
-    display: grid;
-    grid-template-columns: 1fr 250px;
-    grid-gap: 70px;
-  }
 }
 
 .btn {
@@ -485,7 +479,10 @@ p {
 .add-funds-form {
   border-radius: 0.688rem;
   background-color: $gray;
-  padding: 4rem;
+  padding: 2rem;
+  min-width: 300px;
+  max-width: 500px;
+  width: 100%;
 }
 
 .big-form {
