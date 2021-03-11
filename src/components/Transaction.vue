@@ -14,7 +14,7 @@
     </div>
     <div class="item amount">
       <div class="font-weight-bold">Amount</div>
-      <div class="font-weight-bold">{{ amount }} ZIL</div>
+      <div class="font-weight-bold">{{ amount }} {{ transaction.token.symbol }}</div>
     </div>
     <div class="actions">
       <div>
@@ -32,16 +32,19 @@
       >{{ transaction.signatures_count }}/{{ owners.length }}</div>
 
       <div class="main-actions" v-if="isOwner">
-        <div class="action sign" v-if="!hasSigned && !canExecute" @click="onSign">
+        <div class="action sign" v-if="!hasSigned && !canExecute && !loadingTx" @click="onSign">
           <img src="@/assets/Sign.svg" />
           Sign
         </div>
-        <div class="action unsign" @click="onUnsign" v-if="hasSigned && !canExecute">
+        <div class="p-1 ml-3 mr-3" v-if="loadingTx">
+          <i class="fas fa-spinner fa-spin" />
+        </div>
+        <div class="action unsign" @click="onUnsign" v-if="hasSigned && !canExecute && !loadingTx">
           <img src="@/assets/Unsign.svg" />
           Unsign
         </div>
 
-        <div class="action execute" @click="onExecute" v-if="canExecute">
+        <div class="action execute" @click="onExecute" v-if="canExecute && !loadingTx">
           <img src="@/assets/Execute.svg" />
           Execute
         </div>
@@ -54,6 +57,8 @@
 </template>
 
 <script>
+import Big from 'big.js';
+
 import numbro from "numbro";
 import Swal from "sweetalert2";
 
@@ -61,11 +66,14 @@ import { BN, Long, bytes, units } from "@zilliqa-js/util";
 import { fromBech32Address, toBech32Address } from "@zilliqa-js/crypto";
 import { mapGetters } from "vuex";
 
+Big.PE = 99;
+
 export default {
   name: "Transaction",
   data() {
     return {
-      isLoading: false
+      isLoading: false,
+      loadingTx: false
     };
   },
   props: [
@@ -81,13 +89,27 @@ export default {
       personalAddress: "personalAddress"
     }),
     amount() {
-      console.log(this.transaction)
+      if (this.transaction.token.symbol !== 'ZIL') {
+        const [to, amount] = this.transaction.amount.arguments;
+        const _decimals = Big(10).pow(Number(this.transaction.token.decimals));
+        const _amount = Big(amount);
+        const value = _amount.div(_decimals);
+
+        return numbro(value).format();
+      }
+
       return numbro(
         units.fromQa(new BN(this.transaction.amount), units.Units.Zil)
       ).format();
     },
     destination() {
-      return toBech32Address(this.transaction.destination);
+      if (this.transaction.token.symbol === 'ZIL') {
+        return toBech32Address(this.transaction.destination);
+      }
+
+      const [to] = this.transaction.amount.arguments;
+
+      return toBech32Address(to);
     },
     hasSigned() {
       const personalAddress = this.personalAddress;
@@ -129,6 +151,7 @@ export default {
         })
       });
 
+      this.loadingTx = true;
       EventBus.$emit("sign-event", tx);
     },
     onUnsign() {
@@ -152,6 +175,7 @@ export default {
         })
       });
 
+      this.loadingTx = true;
       EventBus.$emit("sign-event", tx);
     },
     onExecute() {
@@ -175,11 +199,16 @@ export default {
         })
       });
 
+      this.loadingTx = true;
       EventBus.$emit("sign-event", tx);
     },
     viewblock(txid) {
       let link = `https://viewblock.io/zilliqa/tx/${txid}`;
-      
+
+      if (this.network.name === "ZilPay") {
+        link += `?network=${this.zilliqa.wallet.net}`;
+      }
+
       if(this.network.url === 'https://dev-api.zilliqa.com') {
         link += '?network=testnet';
       }
@@ -189,29 +218,28 @@ export default {
   },
   mounted() {
     EventBus.$on("sign-success", async tx => {
-      if (tx.ledger === true) {
-        Swal.fire({
-          type: "success",
-          html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(tx.id)}">${tx.tx}</a>`
-        }).then(() => {
-          window.location.reload();
-        });
-      } else {
-        if (tx.id !== undefined && tx.receipt.success === true) {
+      try {
+        const result = await this.zilliqa.blockchain.getTransaction(tx.id);
+
+        if (result && result.receipt && result.receipt.success) {
           Swal.fire({
             type: "success",
             html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(tx.id)}">${tx.id}</a>`
           }).then(() => {
             window.location.reload();
           });
+        } else {
+          Swal.fire({
+            type: "Rejected",
+            html: `Transaction has been Rejected sent <a target="_blank" href="${this.viewblock(tx.id)}">${tx.id}</a>`
+          }).then(() => {
+            window.location.reload();
+          });
         }
+      } catch {
+        //
       }
-    });
-    EventBus.$on("sign-error", async err => {
-      Swal.fire({
-        type: "error",
-        text: err
-      });
+      this.loadingTx = false;
     });
   }
 };

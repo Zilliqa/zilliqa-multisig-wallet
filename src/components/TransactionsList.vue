@@ -1,5 +1,8 @@
 <template>
-  <div class="transactions-list" v-if="this.transactions.length !== 0">
+  <div
+    class="transactions-list"
+    v-if="transactions.length !== 0 && zilliqa"
+  >
     <div class="heading">
       <h2 class="subtitle">Transactions</h2>
       <div class="filters text-white">
@@ -8,7 +11,7 @@
       </div>
     </div>
     <div
-      v-for="(transaction,index) in transactions"
+      v-for="(transaction, index) of transactions"
       :key="index"
       class="content transactions-list"
     >
@@ -35,11 +38,12 @@ import { fromBech32Address } from "@zilliqa-js/crypto";
 
 import Transaction from "@/components/Transaction.vue";
 import ZIlpayMixin from '@/mixins/zilpay';
+import { mapState } from 'vuex';
 
 export default {
   name: "TransactionsList",
   mixins: [ZIlpayMixin],
-  props: ["address", "signatures_need", "network"],
+  props: ["address", "signatures_need", "network", "tokens"],
   components: {
     Transaction
   },
@@ -48,7 +52,8 @@ export default {
       transactions: [],
       owners: [],
       signature_counts: {},
-      signatures: []
+      signatures: [],
+      zilliqa: null
     };
   },
   async mounted() {
@@ -69,13 +74,17 @@ export default {
     if (result && result.transactions && result.signatures && result.signature_counts) {
       const transactions = Object.keys(result.transactions).map((key) =>({
         key: key,
+        token: result.transactions[key].constructor === 'NativeTransaction'
+          ? this.tokens[0] : this.tokens.find(
+          (t) => String(t.address).toLowerCase() === String(result.transactions[key].arguments[0]).toLowerCase()
+        ),
         type: result.transactions[key].constructor,
         destination: result.transactions[key].arguments[0],
         amount: result.transactions[key].arguments[1],
         third: result.transactions[key].arguments[2],
         signatures: result.signatures[key],
         signatures_count: result.signature_counts[key]
-      }));
+      })).filter((t) => Boolean(t.token));
 
       this.transactions = transactions;
       this.owners = Object.keys(result.owners);

@@ -122,6 +122,10 @@ export default {
     },
     viewblock(txid) {
       let link = `https://viewblock.io/zilliqa/tx/${txid}`;
+
+      if (this.network.name === "ZilPay") {
+        link += `?network=${this.zilliqa.wallet.net}`;
+      }
       
       if(this.network.url === 'https://dev-api.zilliqa.com') {
         link += '?network=testnet';

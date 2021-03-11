@@ -22,6 +22,7 @@
           :address="this.$route.params.address"
           :signatures_need="this.wallet.signatures"
           :network="network"
+          :tokens="tokens"
         />
       </div>
       <add-funds
