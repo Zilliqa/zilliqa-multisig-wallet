@@ -1,5 +1,9 @@
 <template>
-  <div class="token-card btn btn-outline-primary">
+  <div
+    class="token-card btn"
+    :class="{ selected }"
+    @click="$emit('select', token)"
+  >
     <img
       class="card-image"
       :src="url"
@@ -23,14 +27,16 @@
 
 <script>
 import { Zilliqa } from "@zilliqa-js/zilliqa";
+import plug from '@/assets/token.svg';
 
 export default {
   name: 'TokenCard',
-  props: ['token', 'network', 'address'],
+  props: ['token', 'network', 'address', 'selected'],
   data() {
     return {
       balance: undefined,
-      zilliqa: null
+      zilliqa: null,
+      loadingError: null
     };
   },
   computed: {
@@ -40,11 +46,13 @@ export default {
   },
   methods: {
     onErrorLoading(event) {
-      console.log(event.target);
+      if (!event.target.src.includes(plug)) {
+        event.target.src = plug;
+      }
     },
     async getBalance() {
       const field = 'balances';
-      const wallet = String(this.wallet).toLowerCase();
+      const wallet = String(this.address).toLowerCase();
       
       try {
         if (this.token.symbol === 'ZIL') {
@@ -57,7 +65,7 @@ export default {
           throw new Error();
         }
         const { result } = await this.zilliqa.blockchain.getSmartContractSubState(
-          this.address,
+          this.token.address,
           field,
           [wallet]
         );
@@ -97,10 +105,24 @@ export default {
   align-items: center;
 
   padding: 10px;
+  margin: 10px;
 
+  border-radius: 0.375rem;
   max-width: 150px;
   width: 100%;
   height: 150px;
+
+  border-color: #354960;
+
+  &:hover {
+    background-color: #354960;
+    border-color: #354960;
+  }
+}
+
+.selected {
+  background-color: #354960;
+  border-color: #354960;
 }
 .card-title {
   font-size: 13px;
@@ -108,4 +130,5 @@ export default {
 .card-subtitle {
   font-size: 15px;
 }
+// #354960
 </style>

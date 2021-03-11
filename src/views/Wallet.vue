@@ -9,14 +9,20 @@
       <TokenCard
         v-for="(el, index) of tokens"
         :key="index"
+        :selected="selectedToken && selectedToken.symbol === el.symbol"
         :token="el"
         :network="network"
         :address="address"
+        @select="onSelectedToken"
       />
     </div>
     <div class="wallet-details mt-5">
       <div class="transactions-container" v-if="!addFunds && !newTransaction && !addToken">
-        <transactions-list :address="this.$route.params.address" :signatures_need="this.wallet.signatures" :network="network"></transactions-list>
+        <transactions-list
+          :address="this.$route.params.address"
+          :signatures_need="this.wallet.signatures"
+          :network="network"
+        />
       </div>
       <add-funds
         :bech32="bech32Address"
@@ -30,14 +36,18 @@
         :wallet="address"
         v-on:cancel-add-token="onCancelAddToekn"
       />
-      <new-transaction :zilliqa="zilliqa" :address="address" v-on:cancel-new-transaction="onCancelNewTransaction" v-if="newTransaction"></new-transaction>
+      <new-transaction
+        :zilliqa="zilliqa"
+        :address="address"
+        v-on:cancel-new-transaction="onCancelNewTransaction"
+        v-if="newTransaction"
+      />
       <div class="sidebar">
         <contract-actions
           :balance="wallet.balance"
           :owners_list="wallet.owners_list"
           class="mb-4"
           v-on:add-funds="onAddFunds"
-          v-on:new-transaction="onNewTransaction"
           v-on:add-token="onAddToken"
         />
         <contract-owners :owners="wallet.owners_list" :signatures="wallet.signatures"></contract-owners>
@@ -77,6 +87,7 @@ export default {
   data() {
     return {
       zilliqa: null,
+      selectedToken: null,
       init: null,
       address: null,
       bech32Address: null,
@@ -104,6 +115,11 @@ export default {
     })
   },
   methods: {
+    onSelectedToken(token) {
+      this.selectedToken = token;
+      this.addFunds = false;
+      this.newTransaction = true;
+    },
     onAddFunds() {
       this.newTransaction = false;
       this.addFunds = true;
@@ -121,10 +137,6 @@ export default {
       this.newTransaction = false;
       this.addFunds = false;
       this.addToken = false;
-    },
-    onNewTransaction() {
-      this.addFunds = false;
-      this.newTransaction = true;
     },
     onCancelNewTransaction() {
       this.newTransaction = false;
