@@ -1,12 +1,19 @@
 <template>
   <div class="add-funds-form" v-if="!isSuccess">
     <h2 class="subtitle mb-5">Import Wallet</h2>
-
-    <div class="big-form mb-5">
-      Wallet address:
-      <input type="text" v-model="address" />
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">
+          zil1
+        </span>
+      </div>
+      <input
+        class="form-control"
+        placeholder="Wallet address"
+        type="text"
+        v-model="address"
+      >
     </div>
-
     <div class="buttons">
       <div v-if="isLoading" class="text-white">
         <i class="fas fa-spinner fa-spin"></i> Please wait while we verify and import the contract.

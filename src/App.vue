@@ -335,6 +335,7 @@ export default {
       this
         .__getZilPay()
         .then((zilPay) => {
+          console.log('zilPay isUnlock', zilPay.wallet.isEnable)
           zilPay.wallet.observableAccount().subscribe((account) => {
             this.setAddress(account.base16);
           });

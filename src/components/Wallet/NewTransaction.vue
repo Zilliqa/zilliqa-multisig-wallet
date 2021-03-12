@@ -74,7 +74,6 @@
       <div v-if="!isLoading && !isSuccess">
         <button
           class="btn btn-primary mr-4"
-          :disabled="!isEnable"
           @click="proceed"
         >
           Submit
@@ -182,21 +181,15 @@ export default {
     ...mapGetters('general', {
       network: 'selectedNetwork'
     }),
-    isEnable() {
-      try {
-        fromBech32Address(this.tranferModel.destination);
-
-        return true;
-      } catch {
-        return false;
-      }
-    },
     data() {
+      let _amount;
+      let value;
       const _decimals = Big(10).pow(Number(this.token.decimals));
-      const _amount = Big(this.tranferModel.amount);
-      const value = _amount.mul(_decimals).round();
 
       if (this.token.symbol === 'ZIL') {
+        const _amount = Big(this.tranferModel.amount);
+        value = _amount.mul(_decimals).round();
+
         return JSON.stringify({
           _tag: 'SubmitNativeTransaction',
           params: [
@@ -219,26 +212,159 @@ export default {
         });
       }
 
-      return JSON.stringify({
-        _tag: 'SubmitCustomTransferTransaction',
-        params: [
-          {
-            vname: 'proxyTokenContract',
-            type: 'ByStr20',
-            value: String(this.token.address).toLowerCase()
-          },
-          {
-            vname: 'to',
-            type: 'ByStr20',
-            value: fromBech32Address(this.tranferModel.destination).toLowerCase()
-          },
-          {
-            vname: 'amount',
-            type: 'Uint128',
-            value: String(value)
-          }
-        ]
-      });
+      switch (this.selectedMethod) {
+        case methods.IncreaseAllowance:
+          _amount = Big(this.increaseAllowanceModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomIncreaseAllowanceTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'spender',
+                type: 'ByStr20',
+                value: fromBech32Address(this.increaseAllowanceModel.spender).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        case methods.DecreaseAllowance:
+          _amount = Big(this.decreaseAllowanceModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomDecreaseAllowanceTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'spender',
+                type: 'ByStr20',
+                value: fromBech32Address(this.decreaseAllowanceModel.spender).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        case methods.Transfer:
+          _amount = Big(this.tranferModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomTransferTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'to',
+                type: 'ByStr20',
+                value: fromBech32Address(this.tranferModel.destination).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        case methods.TransferFrom:
+          _amount = Big(this.tranferFromModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomTransferFromTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'from',
+                type: 'ByStr20',
+                value: fromBech32Address(this.tranferFromModel.from).toLowerCase()
+              },
+              {
+                vname: 'to',
+                type: 'ByStr20',
+                value: fromBech32Address(this.tranferFromModel.destination).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        case methods.Burn:
+          _amount = Big(this.burnModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomBurnTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'burn_account',
+                type: 'ByStr20',
+                value: fromBech32Address(this.burnModel.burnAccount).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        case methods.Mint:
+          _amount = Big(this.mintModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomMintTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'recipient',
+                type: 'ByStr20',
+                value: fromBech32Address(this.mintModel.recipient).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        default:
+          return '';
+      }
     }
   },
   methods: {

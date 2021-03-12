@@ -42,16 +42,8 @@
         </div>
         <div class="col-12 col-md-7">
           <h2 class="subtitle mb-3 toggle-advanced-options"  @click="toggleAdvancedOptions">Advanced options <i class="fas fa-chevron-down"></i></h2>
-
           <div class="advanced-options d-none mb-5">
-            <div class="option">
-              Gas price:
-              <input type="number" v-model="gasPrice" />
-            </div>
-            <div class="option">
-              Gas limit:
-              <input type="number" v-model="gasLimit" />
-            </div>
+            <Gas v-model="gas"/>
           </div>
         </div>
       </div>
@@ -87,6 +79,7 @@ import { BN, Long, bytes, validation } from '@zilliqa-js/util';
 import { fromBech32Address, toBech32Address } from '@zilliqa-js/crypto';
 import { mapGetters } from 'vuex';
 import SuccessScreen from '@/components/SuccessScreen.vue';
+import Gas from '@/components/Gas';
 
 import ZIlpayMixin from '@/mixins/zilpay';
 
@@ -94,14 +87,17 @@ export default {
   name: 'CreateWallet',
   mixins: [ZIlpayMixin],
   components: {
-    SuccessScreen
+    SuccessScreen,
+    Gas
   },
   data() {
     return {
       owners: [],
       signatures: 2,
-      gasPrice: 2000000000,
-      gasLimit: 25000,
+      gas: {
+        gasPrice: 2000000000,
+        gasLimit: 25000
+      },
       isLoading: false,
       isDeployed: false,
       zilliqa: null,
@@ -199,8 +195,8 @@ export default {
       try {
         // validations
         if (this.owners.length <= 1) throw 'You should add minimum 2 owners.';
-        if (!this.gasPrice) throw 'Gas Price should be set.';
-        if (!this.gasLimit) throw 'Gas Limit should be set.';
+        if (!this.gas.gasPrice) throw 'Gas Price should be set.';
+        if (!this.gas.gasLimit) throw 'Gas Limit should be set.';
 
         const chainId = this.network.chainId; // chainId of the developer testnet
         const msgVersion = this.network.msgVersion; // current msgVersion
@@ -208,7 +204,7 @@ export default {
 
         // Get Minimum Gas Price from blockchain
         const minGasPrice = await this.zilliqa.blockchain.getMinimumGasPrice();
-        let myGasPrice = new BN(this.gasPrice); // Gas Price that will be used by all transactions
+        let myGasPrice = new BN(this.gas.gasPrice); // Gas Price that will be used by all transactions
         const isGasSufficient = myGasPrice.gte(new BN(minGasPrice.result)); // Checks if your gas price is less than the minimum gas price
 
         if (!isGasSufficient)
@@ -245,7 +241,7 @@ export default {
           toAddr: '0x0000000000000000000000000000000000000000',
           amount: new BN(0),
           gasPrice: myGasPrice, // in Qa
-          gasLimit: Long.fromNumber(this.gasLimit),
+          gasLimit: Long.fromNumber(this.gas.gasLimit),
           data: JSON.stringify(init).replace(/\\"/g, '"'),
           signature: ''
         });
@@ -329,8 +325,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.advanced-options {
-  margin-bottom: 2rem;
+.toggle-advanced-options {
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .toggle-advanced-options {

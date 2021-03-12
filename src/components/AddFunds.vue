@@ -2,11 +2,19 @@
   <div class="add-funds-form" v-if="!isSuccess">
     <h2 class="subtitle mb-5">Add funds</h2>
 
-    <div class="big-form mb-5">
-      Wallet address:
-      <input type="text" :value="bech32" disabled />
-      Amount (ZIL):
-      <input type="number" min="0" @change="checkAmount" v-model="amount" />
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">
+          ZIL
+        </span>
+      </div>
+      <input
+        class="form-control"
+        placeholder="Wallet address"
+        type="number"
+        v-model="amount"
+        @change="checkAmount"
+      >
     </div>
 
     <h2 class="subtitle toggle-advanced-options mb-4" @click="toggleAdvancedOptions">
@@ -14,14 +22,7 @@
     </h2>
 
     <div class="advanced-options d-none mb-5">
-      <div class="option">
-        Gas price:
-        <input type="number" v-model="gasPrice" />
-      </div>
-      <div class="option">
-        Gas limit:
-        <input type="number" v-model="gasLimit" />
-      </div>
+      <Gas v-model="gas"/>
     </div>
 
     <div class="buttons">
@@ -56,6 +57,7 @@ import { bytes, BN, Long, units } from '@zilliqa-js/util';
 
 import SuccessScreen from '@/components/SuccessScreen';
 import ViewblockLink from '@/components/ViewblockLink';
+import Gas from '@/components/Gas';
 
 export default {
   name: 'AddFunds',
@@ -63,8 +65,10 @@ export default {
   data() {
     return {
       amount: 0,
-      gasPrice: 2000000000,
-      gasLimit: 2000,
+      gas: {
+        gasPrice: 2000000000,
+        gasLimit: 50000
+      },
       isLoading: false,
       isSuccess: false,
       txId: null
@@ -72,7 +76,8 @@ export default {
   },
   components: {
     SuccessScreen,
-    ViewblockLink
+    ViewblockLink,
+    Gas
   },
   computed: {
     ...mapGetters('general', {
@@ -99,8 +104,8 @@ export default {
         version: VERSION,
         toAddr: this.address,
         amount: new BN(units.toQa(this.amount, units.Units.Zil)),
-        gasPrice: new BN(this.gasPrice),
-        gasLimit: Long.fromNumber(this.gasLimit),
+        gasPrice: new BN(this.gas.gasPrice),
+        gasLimit: Long.fromNumber(this.gas.gasLimit),
         data: JSON.stringify({
           _tag: 'AddFunds',
           params: []
@@ -168,10 +173,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.advanced-options {
-  margin-bottom: 2rem;
+.toggle-advanced-options {
+  cursor: pointer;
+  font-size: 14px;
 }
-
 .toggle-advanced-options {
   cursor: pointer;
 }
