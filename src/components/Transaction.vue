@@ -217,24 +217,28 @@ export default {
     }
   },
   mounted() {
-    EventBus.$on("sign-success", async tx => {
+    EventBus.$on('sign-success', async ({ id, ledger }) => {
       try {
-        const result = await this.zilliqa.blockchain.getTransaction(tx.id);
+        const tx = await this.zilliqa.blockchain.getTransaction(id);
 
-        if (result && result.receipt && result.receipt.success) {
-          Swal.fire({
-            type: "success",
-            html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(tx.id)}">${tx.id}</a>`
-          }).then(() => {
-            window.location.reload();
-          });
+        if (ledger !== true) {
+          if (tx && tx.receipt && tx.receipt.success === true) {
+            Swal.fire({
+              type: 'success',
+              html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(id)}">${id}</a>`
+            }).then(() => {
+              window.location.reload();
+            });
+          }
         } else {
-          Swal.fire({
-            type: "Rejected",
-            html: `Transaction has been Rejected sent <a target="_blank" href="${this.viewblock(tx.id)}">${tx.id}</a>`
-          }).then(() => {
-            window.location.reload();
-          });
+          if (!tx && tx.receipt && tx.receipt.success === false) {
+            Swal.fire({
+              type: 'success',
+              html: `Transaction has been Rejected sent <a target="_blank" href="${this.viewblock(id)}">${id}</a>`
+            }).then(() => {
+              window.location.reload();
+            });
+          }
         }
       } catch {
         //
