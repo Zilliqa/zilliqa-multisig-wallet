@@ -218,13 +218,13 @@ export default {
 .tokens {
   display: flex;
   flex-wrap: wrap;
-  max-width: 760px;
+  padding-bottom: 50px;
 }
 
 .wallet-details {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-around;
+  justify-content: space-between;
 }
 
 .sidebar {

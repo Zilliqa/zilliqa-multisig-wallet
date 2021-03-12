@@ -1,6 +1,26 @@
 <template>
   <div class="add-funds-form" v-if="!isSuccess">
-    <h2 class="subtitle mb-5">New Transaction</h2>
+    <h2 class="subtitle mb-4">New Transaction</h2>
+    <!-- <tabs>
+      <tab name="IncreaseAllowance">
+          Second tab content
+      </tab>
+      <tab name="DecreaseAllowance">
+          Third tab content
+      </tab>
+      <tab name="Burn">
+          Third tab content
+      </tab>
+      <tab name="Mint">
+          Third tab content
+      </tab>
+      <tab name="Transfer">
+          Third tab content
+      </tab>
+      <tab name="TransferFrom">
+          Third tab content
+      </tab>
+    </tabs> -->
     <div class="input-group mb-3">
       <div class="input-group-prepend">
         <span class="input-group-text" id="basic-addon1">
@@ -32,21 +52,27 @@
       <div class="text-danger" v-if="destinationError">{{ destinationError }}</div>
     </div>
     <h2 class="subtitle toggle-advanced-options mb-4" @click="toggleAdvancedOptions">
-      Advanced options <i class="fas fa-chevron-down"></i>
+      Advanced options <i class="fas fa-chevron-down" />
     </h2>
 
     <div class="advanced-options d-none mb-5">
-      <div class="option">
-        Gas price:
-        <input type="number" v-model="gasPrice" />
-      </div>
-      <div class="option">
-        Gas limit:
-        <input type="number" v-model="gasLimit" />
-      </div>
-      <div v-if="token.symbol === 'ZIL'" class="option">
-        Tag:
-        <input type="text" v-model="tag" />
+      <Gas v-model="gas"/>
+      <div
+        v-if="token.symbol === 'ZIL'"
+        class="input-group mb-3"
+      >
+        <div class="input-group-prepend">
+          <span class="input-group-text" id="basic-addon1">
+            Tag
+          </span>
+        </div>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Teg transition"
+          aria-label="Teg transition"
+          v-model="tag"
+        >
       </div>
     </div>
 
@@ -84,6 +110,7 @@ import { fromBech32Address } from '@zilliqa-js/crypto';
 import { mapGetters } from 'vuex';
 import SuccessScreen from '@/components/SuccessScreen';
 import ViewblockLink from '@/components/ViewblockLink';
+import Gas from '@/components/Gas';
 
 Big.PE = 99;
 
@@ -101,15 +128,18 @@ export default {
       destination: null,
       destinationError: false,
       amount: 0,
-      gasPrice: 2000000000,
       tag: '',
-      gasLimit: 50000,
       isLoading: false,
-      isSuccess: false
+      isSuccess: false,
+      gas: {
+        gasPrice: 2000000000,
+        gasLimit: 50000
+      }
     };
   },
   components: {
     SuccessScreen,
+    Gas,
     ViewblockLink
   },
   props: ['zilliqa', 'address', 'token'],
@@ -204,8 +234,8 @@ export default {
         version: VERSION,
         toAddr: this.address,
         amount: new BN(0),
-        gasPrice: new BN(this.gasPrice),
-        gasLimit: Long.fromNumber(this.gasLimit),
+        gasPrice: new BN(this.gas.gasPrice),
+        gasLimit: Long.fromNumber(this.gas.gasLimit),
         data: this.data
       });
 
@@ -265,5 +295,11 @@ export default {
 <style lang="scss" scoped>
 .toggle-advanced-options {
   cursor: pointer;
+  font-size: 14px;
+}
+
+.advanced-options {
+  display: flex;
+  flex-direction: column;
 }
 </style>

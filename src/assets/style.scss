@@ -505,6 +505,30 @@ p {
   }
 }
 
+.tabs-component-tabs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+
+  & > .tabs-component-tab + .is-active > a {
+    background-color: $brand;
+    color: $light;
+  }
+
+  & > .tabs-component-tab {
+    & > a {
+      padding: 10px;
+      text-decoration: none;
+      border-radius: 0.375rem;
+      font-size: 1rem;
+      font-family: "Quicksand", sans-serif;
+      font-weight: 700;
+    }
+  }
+}
+
 .advanced-options {
   display: flex;
 
