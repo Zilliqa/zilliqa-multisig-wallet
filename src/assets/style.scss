@@ -28,7 +28,9 @@ html.swal2-shown.swal2-height-auto {
     height: 100% !important;
   }
 }
-
+.dropdown-toggle {
+  padding: 0.6rem 2.5rem !important;
+}
 #app {
   font-family: $Quicksand;
   -webkit-font-smoothing: antialiased;
@@ -191,7 +193,13 @@ p {
     }
   }
 }
-
+.dropdown-menu {
+  outline: none;
+}
+#dropdown-aria {
+  padding: 0;
+  margin: 0;
+}
 .login {
   width: 100%;
   height: 100%;

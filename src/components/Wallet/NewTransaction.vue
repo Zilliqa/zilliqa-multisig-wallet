@@ -1,60 +1,54 @@
 <template>
   <div class="add-funds-form" v-if="!isSuccess">
     <h2 class="subtitle mb-4">New Transaction</h2>
-    <!-- <tabs>
-      <tab name="IncreaseAllowance">
-          Second tab content
-      </tab>
-      <tab name="DecreaseAllowance">
-          Third tab content
-      </tab>
-      <tab name="Burn">
-          Third tab content
-      </tab>
-      <tab name="Mint">
-          Third tab content
-      </tab>
-      <tab name="Transfer">
-          Third tab content
-      </tab>
-      <tab name="TransferFrom">
-          Third tab content
-      </tab>
-    </tabs> -->
-    <div class="input-group mb-3">
-      <div class="input-group-prepend">
-        <span class="input-group-text" id="basic-addon1">
-          {{ token.symbol }}
-        </span>
-      </div>
-      <input
-        class="form-control"
-        placeholder="Amount"
-        aria-label="Amount"
-        type="number"
-        min="0"
-        v-model="amount"
-        @change="checkAmount"
+    <b-dropdown
+      id="dropdown-aria"
+      :text="selectedMethod"
+      class="mb-2"
+      v-if="token.symbol !== 'ZIL'"
+    >
+      <b-dropdown-item
+        v-for="(m, index) of methods"
+        :key="index"
+        :active="selectedMethod === m"
+        @click="selectedMethod = m"
       >
-    </div>
-    <div class="input-group mb-3">
-      <div class="input-group-prepend">
-        <span class="input-group-text" id="basic-addon1">zil1</span>
-      </div>
-      <input
-        type="text"
-        class="form-control"
-        placeholder="Destination"
-        aria-label="Destination"
-        v-model="destination"
-        @change="checkAddress"
-      >
-      <div class="text-danger" v-if="destinationError">{{ destinationError }}</div>
-    </div>
+        {{ m }}
+      </b-dropdown-item>
+    </b-dropdown>
+    <Transfer
+      v-if="selectedMethod === methods.Transfer"
+      v-model="tranferModel"
+      :symbol="token.symbol"
+    />
+    <TransferFrom
+      v-if="selectedMethod === methods.TransferFrom"
+      v-model="tranferFromModel"
+      :symbol="token.symbol"
+    />
+    <Mint
+      v-if="selectedMethod === methods.Mint"
+      v-model="mintModel"
+      :symbol="token.symbol"
+    />
+    <Burn
+      v-if="selectedMethod === methods.Burn"
+      v-model="burnModel"
+      :symbol="token.symbol"
+    />
+    <Allowance
+      v-if="selectedMethod === methods.DecreaseAllowance"
+      v-model="decreaseAllowanceModel"
+      :symbol="token.symbol"
+    />
+    <Allowance
+      v-if="selectedMethod === methods.IncreaseAllowance"
+      v-model="increaseAllowanceModel"
+      :symbol="token.symbol"
+    />
     <h2 class="subtitle toggle-advanced-options mb-4" @click="toggleAdvancedOptions">
       Advanced options <i class="fas fa-chevron-down" />
     </h2>
-
     <div class="advanced-options d-none mb-5">
       <Gas v-model="gas"/>
       <div
@@ -75,7 +69,6 @@
         >
       </div>
     </div>
-
     <div class="buttons">
       <div v-if="isLoading" class="text-white">Please wait while the transaction is deployed.</div>
       <div v-if="!isLoading && !isSuccess">
@@ -105,42 +98,84 @@
 import Swal from 'sweetalert2';
 import Big from 'big.js';
 
-import { validation, bytes, BN, Long } from '@zilliqa-js/util';
+import { bytes, BN, Long } from '@zilliqa-js/util';
 import { fromBech32Address } from '@zilliqa-js/crypto';
+
 import { mapGetters } from 'vuex';
+
+import { BDropdown, BDropdownItem } from 'bootstrap-vue';
 import SuccessScreen from '@/components/SuccessScreen';
 import ViewblockLink from '@/components/ViewblockLink';
 import Gas from '@/components/Gas';
+import Transfer from '@/components/transfer/Transfer';
+import TransferFrom from '@/components/transfer/TransferFrom';
+import Mint from '@/components/transfer/Mint';
+import Burn from '@/components/transfer/Burn';
+import Allowance from '@/components/transfer/Allowance';
 
 Big.PE = 99;
 
-// IncreaseAllowance
-// DecreaseAllowance
-// Burn
-// Mint
-// Transfer
-// TransferFrom
+const methods = {
+  IncreaseAllowance: 'IncreaseAllowance',
+  DecreaseAllowance: 'DecreaseAllowance',
+  Transfer: 'Transfer',
+  TransferFrom: 'TransferFrom',
+  Burn: 'Burn',
+  Mint: 'Mint'
+};
 
 export default {
   name: 'NewTransaction',
   data() {
     return {
-      destination: null,
+      methods,
+      selectedMethod: methods.Transfer,
       destinationError: false,
-      amount: 0,
       tag: '',
       isLoading: false,
       isSuccess: false,
       gas: {
         gasPrice: 2000000000,
         gasLimit: 50000
+      },
+      burnModel: {
+        amount: 0,
+        burnAccount: null
+      },
+      mintModel: {
+        amount: 0,
+        recipient: null
+      },
+      tranferModel: {
+        amount: 0,
+        destination: null
+      },
+      tranferFromModel: {
+        amount: 0,
+        destination: null,
+        from: null
+      },
+      decreaseAllowanceModel: {
+        amount: 0,
+        spender: null
+      },
+      increaseAllowanceModel: {
+        amount: 0,
+        spender: null
       }
     };
   },
   components: {
     SuccessScreen,
     Gas,
-    ViewblockLink
+    ViewblockLink,
+    Transfer,
+    Allowance,
+    TransferFrom,
+    Mint,
+    Burn,
+    BDropdown,
+    BDropdownItem
   },
   props: ['zilliqa', 'address', 'token'],
   computed: {
@@ -149,7 +184,7 @@ export default {
     }),
     isEnable() {
       try {
-        fromBech32Address(this.destination);
+        fromBech32Address(this.tranferModel.destination);
 
         return true;
       } catch {
@@ -158,7 +193,7 @@ export default {
     },
     data() {
       const _decimals = Big(10).pow(Number(this.token.decimals));
-      const _amount = Big(this.amount);
+      const _amount = Big(this.tranferModel.amount);
       const value = _amount.mul(_decimals).round();
 
       if (this.token.symbol === 'ZIL') {
@@ -168,7 +203,7 @@ export default {
             {
               vname: 'recipient',
               type: 'ByStr20',
-              value: fromBech32Address(this.destination).toLowerCase()
+              value: fromBech32Address(this.tranferModel.destination).toLowerCase()
             },
             {
               vname: 'amount',
@@ -195,7 +230,7 @@ export default {
           {
             vname: 'to',
             type: 'ByStr20',
-            value: fromBech32Address(this.destination).toLowerCase()
+            value: fromBech32Address(this.tranferModel.destination).toLowerCase()
           },
           {
             vname: 'amount',
@@ -207,15 +242,6 @@ export default {
     }
   },
   methods: {
-    checkAddress() {
-      const address = this.destination;
-      this.destinationError = false;
-
-      if (!validation.isAddress(address) && !validation.isBech32(address)) {
-        this.destination = null;
-        this.destinationError = `${address} is not a correct Zilliqa address.`;
-      }
-    },
     checkAmount() {
       if (this.amount <= -1) {
         this.amount = 0;
