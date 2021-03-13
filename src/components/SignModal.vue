@@ -225,7 +225,7 @@ export default {
           this.loading = false;
           EventBus.$emit('sign-success', {
             ledger: true,
-            tx: data.result.TranID,
+            tx: data,
             id: data.result.TranID
           });
           this.$emit('close-sign');

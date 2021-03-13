@@ -64,6 +64,12 @@ const actions = {
         commit('setWallet', null);
         commit('setAddress', null);
         commit('setLoginType', null);
+        commit('setNetwork', {
+            name: 'Mainnet',
+            url: 'https://api.zilliqa.com',
+            chainId: 1,
+            msgVersion: 1
+        });
     },
     changeNetwork({ commit, state }, url) {
         const network = state.networks.find(function (item) {

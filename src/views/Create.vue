@@ -255,14 +255,17 @@ export default {
         this.isLoading = false;
       }
     },
-    async checkForHash(hash) {
-      const cid = await this.zilliqa.blockchain.getContractAddressFromTransactionID(hash);
+    checkForHash(hash) {
+      return new Promise((resolve) => {
+        const interval = setInterval(async() => {
+          const cid = await this.zilliqa.blockchain.getContractAddressFromTransactionID(hash);
 
-      if(cid.error !== undefined && cid.error.code === -5) {
-        return await this.checkForHash(hash);
-      }
-
-      return cid;
+          if(cid) {
+            resolve(cid);
+            clearInterval(interval);
+          }
+        }, 10000);
+      });
     }
   },
   beforeMount() {
@@ -276,7 +279,7 @@ export default {
     }
 
     EventBus.$on('sign-success', async tx => {
-      if (tx.ledger !== true) {
+      if (!tx.ledger) {
         const contractId = await this.zilliqa.blockchain.getContractAddressFromTransactionID(tx.id);
 
         this.isDeployed = true;
@@ -297,7 +300,7 @@ export default {
         } catch (error) {
           throw error;
         }
-      }else {
+      } else {
         const contractId = await this.checkForHash(tx.id);
 
         this.isDeployed = true;
