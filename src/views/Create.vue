@@ -76,7 +76,7 @@ import Swal from 'sweetalert2';
 
 import { Zilliqa } from '@zilliqa-js/zilliqa';
 import { BN, Long, bytes, validation } from '@zilliqa-js/util';
-import { fromBech32Address, toBech32Address } from '@zilliqa-js/crypto';
+import { fromBech32Address, toBech32Address, toChecksumAddress } from '@zilliqa-js/crypto';
 import { mapGetters } from 'vuex';
 import SuccessScreen from '@/components/SuccessScreen.vue';
 import Gas from '@/components/Gas';
@@ -260,8 +260,8 @@ export default {
         const interval = setInterval(async() => {
           const cid = await this.zilliqa.blockchain.getContractAddressFromTransactionID(hash);
 
-          if(cid) {
-            resolve(cid);
+          if(cid.result) {
+            resolve(cid.result);
             clearInterval(interval);
           }
         }, 10000);
@@ -285,7 +285,8 @@ export default {
         this.isDeployed = true;
         this.isLoading = false;
 
-        let contractBech32 = toBech32Address(contractId.result);
+        const base16 = toChecksumAddress(contractId.result);
+        let contractBech32 = toBech32Address(base16);
 
         this.deployedWallet = {
           transId: tx.id,
@@ -306,7 +307,8 @@ export default {
         this.isDeployed = true;
         this.isLoading = false;
 
-        let contractBech32 = toBech32Address(contractId.result);
+        const base16 = toChecksumAddress(contractId);
+        let contractBech32 = toBech32Address(base16);
 
         this.deployedWallet = {
           transId: tx.id,

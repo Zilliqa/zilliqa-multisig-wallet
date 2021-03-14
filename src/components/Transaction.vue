@@ -217,31 +217,34 @@ export default {
     }
   },
   mounted() {
-    EventBus.$on('sign-success', async ({ id, ledger }) => {
-      try {
-        const tx = await this.zilliqa.blockchain.getTransaction(id);
+    EventBus.$on('sign-success', async (data) => {
+      if (data.ledger !== true) {
+        const tx = await this.zilliqa.blockchain.getTransaction(data.id);
 
-        if (ledger !== true) {
-          if (tx && tx.receipt && tx.receipt.success === true) {
-            Swal.fire({
-              type: 'success',
-              html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(id)}">${id}</a>`
-            }).then(() => {
-              window.location.reload();
-            });
-          }
+        if (tx && tx.receipt && tx.receipt.success === true) {
+          Swal.fire({
+            type: 'success',
+            html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(data.id)}">${data.id}</a>`
+          }).then(() => {
+            window.location.reload();
+          });
         } else {
-          if (!tx && tx.receipt && tx.receipt.success === false) {
-            Swal.fire({
-              type: 'success',
-              html: `Transaction has been Rejected sent <a target="_blank" href="${this.viewblock(id)}">${id}</a>`
-            }).then(() => {
-              window.location.reload();
-            });
-          }
+          Swal.fire({
+            type: 'danger',
+            html: `Transaction has been rejected <a target="_blank" href="${this.viewblock(data.id)}">${data.id}</a>`
+          }).then(() => {
+            window.location.reload();
+          });
         }
-      } catch {
-        //
+      } else {
+        if (data.id) {
+          Swal.fire({
+            type: 'success',
+            html: `Transaction has been Rejected sent <a target="_blank" href="${this.viewblock(data.id)}">${data.id}</a>`
+          }).then(() => {
+            window.location.reload();
+          });
+        }
       }
       this.loadingTx = false;
     });

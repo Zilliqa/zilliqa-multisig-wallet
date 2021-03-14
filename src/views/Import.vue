@@ -104,23 +104,6 @@ export default {
 
         this.constructOwners(owners.value);
 
-        /*
-        // need this for find function
-        const personala = toBech32Address(this.personalAddress);
-
-        // Validate if user is in owners list
-        const found = this.owners_list.find(function(item) {
-          if (item.address === personala) return true;
-
-          return false;
-        });
-
-        if (found === undefined) {
-          throw new Error('You are not in owners list');
-        }
-
-        */
-
         this.deployedWallet = {
           transId: null,
           contractId: toBech32Address(address),
