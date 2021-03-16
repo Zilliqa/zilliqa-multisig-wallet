@@ -20,11 +20,18 @@
     <div class="wallet-details">
       <div class="transactions-container" v-if="!addFunds && !newTransaction && !addToken">
         <transactions-list
-          :address="this.$route.params.address"
-          :signatures_need="this.wallet.signatures"
+          :address="$route.params.address"
+          :signatures_need="wallet.signatures"
           :network="network"
           :tokens="tokens"
+          :selectedToken="selectedToken"
         />
+        <button
+          class="btn btn-outline-primary btn-block new-tx-btn"
+          @click="onNewTransaction"
+        >
+          New Transaction
+        </button>
       </div>
       <add-funds
         :bech32="bech32Address"
@@ -123,7 +130,15 @@ export default {
       this.selectedToken = token;
       this.addFunds = false;
       this.addToken = false;
+    },
+    onNewTransaction() {
       this.newTransaction = true;
+
+      if (!this.selectedToken) {
+        const [zilliqa] = this.tokens;
+
+        this.selectedToken = zilliqa;
+      }
     },
     onAddFunds() {
       this.newTransaction = false;
@@ -230,7 +245,9 @@ export default {
 .sidebar {
   max-width: 300px;
 }
-
+.new-tx-btn {
+  max-width: 280px;
+}
 @media only screen and (max-width: 1300px) {
   .sidebar {
     margin-top: 2rem;

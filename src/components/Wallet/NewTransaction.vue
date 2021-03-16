@@ -135,7 +135,7 @@ export default {
       isSuccess: false,
       gas: {
         gasPrice: 2000000000,
-        gasLimit: 50000
+        gasLimit: 5000
       },
       burnModel: {
         amount: 0,

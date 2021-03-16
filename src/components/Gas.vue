@@ -50,7 +50,7 @@ export default {
     return {
       minGasPrice: minGasPrice,
       gasPrice: minGasPrice,
-      gasLimit: 50000
+      gasLimit: 5000
     }
   },
   methods: {

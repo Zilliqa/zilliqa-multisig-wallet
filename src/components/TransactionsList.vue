@@ -1,22 +1,30 @@
 <template>
   <div
     class="transactions-list"
-    v-if="transactions.length !== 0 && zilliqa"
+    v-if="zilliqa"
   >
     <div class="heading">
       <h2 class="subtitle">Transactions</h2>
       <div class="filters text-white">
         Filter by:
-        <span>All Transactions</span>
+        <span>
+          {{ selectedToken ? selectedToken.symbol : 'All Transactions' }}
+        </span>
       </div>
     </div>
+    <h2
+      v-if="list.length === 0"
+      class="subtitle text-white"
+    >
+      Have no transactions yet.
+    </h2>
     <div
-      v-for="(transaction, index) of transactions"
+      v-for="(tx, index) of list"
       :key="index"
       class="content transactions-list"
     >
       <Transaction
-        :transaction="transaction"
+        :transaction="tx"
         :wallet="address"
         :owners="owners"
         :signature_counts="signature_counts"
@@ -38,12 +46,17 @@ import { fromBech32Address } from "@zilliqa-js/crypto";
 
 import Transaction from "@/components/Transaction.vue";
 import ZIlpayMixin from '@/mixins/zilpay';
-import { mapState } from 'vuex';
 
 export default {
   name: "TransactionsList",
   mixins: [ZIlpayMixin],
-  props: ["address", "signatures_need", "network", "tokens"],
+  props: [
+    "address",
+    "signatures_need",
+    "network",
+    "tokens",
+    "selectedToken"
+  ],
   components: {
     Transaction
   },
@@ -53,44 +66,61 @@ export default {
       owners: [],
       signature_counts: {},
       signatures: [],
-      zilliqa: null
+      zilliqa: null,
+      contractState: {}
     };
   },
-  async mounted() {
-    let address = this.address;
+  computed: {
+    list() {
+      return this.transactions.filter((t) => {
+        if (!this.selectedToken && t.token) {
+          return true;
+        }
 
-    if (validation.isBech32(address)) {
-      address = fromBech32Address(address);
+        return t.token && t.token.symbol === this.selectedToken.symbol;
+      });
     }
+  },
+  methods: {
+    async load() {
+      let address = this.address;
 
+      if (validation.isBech32(address)) {
+        address = fromBech32Address(address);
+      }
+      const { result } = await this.zilliqa.blockchain.getSmartContractState(address);
+
+      if (result && result.transactions && result.signatures && result.signature_counts) {
+        const transactions = Object.keys(result.transactions).map((key) =>({
+          key: key,
+          token: result.transactions[key].constructor === 'NativeTransaction'
+            ? this.tokens[0] : this.tokens.find(
+            (t) => String(t.address).toLowerCase() === String(result.transactions[key].arguments[0]).toLowerCase()
+          ),
+          type: result.transactions[key].constructor,
+          destination: result.transactions[key].arguments[0],
+          amount: result.transactions[key].arguments[1],
+          third: result.transactions[key].arguments[2],
+          signatures: result.signatures[key],
+          signatures_count: result.signature_counts[key]
+        }));
+
+        this.transactions = transactions;
+        this.owners = Object.keys(result.owners);
+        this.signature_counts = result.signature_counts;
+        this.signatures = Object.values(result.signatures);
+      }
+    }
+  },
+  async mounted() {
     if (this.network.name === "ZilPay") {
       this.zilliqa = await this.__getZilPay();
     } else {
       this.zilliqa = new Zilliqa(this.network.url);
     }
 
-    const { result } = await this.zilliqa.blockchain.getSmartContractState(address);
-
-    if (result && result.transactions && result.signatures && result.signature_counts) {
-      const transactions = Object.keys(result.transactions).map((key) =>({
-        key: key,
-        token: result.transactions[key].constructor === 'NativeTransaction'
-          ? this.tokens[0] : this.tokens.find(
-          (t) => String(t.address).toLowerCase() === String(result.transactions[key].arguments[0]).toLowerCase()
-        ),
-        type: result.transactions[key].constructor,
-        destination: result.transactions[key].arguments[0],
-        amount: result.transactions[key].arguments[1],
-        third: result.transactions[key].arguments[2],
-        signatures: result.signatures[key],
-        signatures_count: result.signature_counts[key]
-      })).filter((t) => Boolean(t.token));
-
-      this.transactions = transactions;
-      this.owners = Object.keys(result.owners);
-      this.signature_counts = result.signature_counts;
-      this.signatures = Object.values(result.signatures);
-    }
+    await this.load();
+    this.onFilter();
   }
 };
 </script>
