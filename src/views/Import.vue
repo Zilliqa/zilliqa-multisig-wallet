@@ -1,12 +1,19 @@
 <template>
   <div class="add-funds-form" v-if="!isSuccess">
     <h2 class="subtitle mb-5">Import Wallet</h2>
-
-    <div class="big-form mb-5">
-      Wallet address:
-      <input type="text" v-model="address" />
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">
+          zil1
+        </span>
+      </div>
+      <input
+        class="form-control"
+        placeholder="Wallet address"
+        type="text"
+        v-model="address"
+      >
     </div>
-
     <div class="buttons">
       <div v-if="isLoading" class="text-white">
         <i class="fas fa-spinner fa-spin"></i> Please wait while we verify and import the contract.
@@ -48,7 +55,8 @@ export default {
       isSuccess: false,
       isLoading: false,
       deployedWallet: null,
-      owners_list: []
+      owners_list: [],
+      zilliqa: null
     };
   },
   components: {
@@ -84,30 +92,17 @@ export default {
           address = fromBech32Address(address);
         }
 
-        const zilliqa = new Zilliqa(this.network.url);
+        if (this.network.name === "ZilPay") {
+          this.zilliqa = window['zilPay'];
+        } else {
+          this.zilliqa = new Zilliqa(this.network.url);
+        }
 
-        const init = await zilliqa.blockchain.getSmartContractInit(address);
+        const init = await this.zilliqa.blockchain.getSmartContractInit(address);
         const signatures = init.result.find(item => item.vname === 'required_signatures');
         const owners = init.result.find(item => item.vname === 'owners_list');
 
         this.constructOwners(owners.value);
-
-        /*
-        // need this for find function
-        const personala = toBech32Address(this.personalAddress);
-
-        // Validate if user is in owners list
-        const found = this.owners_list.find(function(item) {
-          if (item.address === personala) return true;
-
-          return false;
-        });
-
-        if (found === undefined) {
-          throw new Error('You are not in owners list');
-        }
-
-        */
 
         this.deployedWallet = {
           transId: null,

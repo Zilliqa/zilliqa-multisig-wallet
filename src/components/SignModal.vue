@@ -43,6 +43,9 @@
               </div>
             </div>
             <div class="alert alert-danger my-2" v-if="error">{{ error }}</div>
+            <button class="btn btn-primary" @click="closeSign" v-if="error">
+              Close
+            </button>
           </div>
 
           <div class="footer d-flex justify-content-end" v-if="!actionHappening">
@@ -188,9 +191,7 @@ export default {
         };
 
         this.loading = 'Please sign transaction from the Ledger Device';
-        const signed = await zil.signTxn(this.keystore, newP);
-        const signature = signed.sig;
-
+        const signature = await zil.signTxn(this.keystore, newP);
         const newtx = {
           id: '1',
           jsonrpc: '2.0',
@@ -211,7 +212,6 @@ export default {
             }
           ]
         };
-
         const response = await fetch(this.network.url, {
           method: 'POST',
           mode: 'cors',
@@ -222,22 +222,21 @@ export default {
           },
           body: JSON.stringify(newtx)
         });
-
         let data = await response.json();
+
+        if (data && data.result && data.result.error) {
+          this.actionHappening = false;
+          throw new Error(data.result.error.message);
+        }
 
         if (data.result.TranID !== undefined) {
           this.loading = false;
           EventBus.$emit('sign-success', {
             ledger: true,
-            tx: data.result.TranID,
+            tx: data,
             id: data.result.TranID
           });
           this.$emit('close-sign');
-        }
-
-        if (data.result.error !== undefined) {
-          this.actionHappening = false;
-          throw new Error(data.result.error.message);
         }
       } catch (error) {
         this.loading = false;

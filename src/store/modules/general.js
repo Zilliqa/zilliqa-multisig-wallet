@@ -31,7 +31,13 @@ const state = {
     ],
     keystore: null,
     address: null,
-    login_type: null
+    login_type: null,
+    tokens: [{
+        address: null,
+        name: 'Zilliqa',
+        symbol: 'ZIL',
+        decimals: 12
+    }]
 };
 
 const getters = {
@@ -58,6 +64,12 @@ const actions = {
         commit('setWallet', null);
         commit('setAddress', null);
         commit('setLoginType', null);
+        commit('setNetwork', {
+            name: 'Mainnet',
+            url: 'https://api.zilliqa.com',
+            chainId: 1,
+            msgVersion: 1
+        });
     },
     changeNetwork({ commit, state }, url) {
         const network = state.networks.find(function (item) {
@@ -70,6 +82,13 @@ const actions = {
 
 
 const mutations = {
+    addToken(state, payload) {
+        const found = state.tokens.find((t) => t.symbol === payload.symbol);
+
+        if (!found) {
+            state.tokens.push(payload);
+        }
+    },
     setNetwork(state, payload) {
         state.network = payload;
     },

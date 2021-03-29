@@ -1,14 +1,6 @@
 <template>
   <div class="contract-actions">
-    <div class="heading">
-      <h2 class="subtitle">Balance</h2>
-    </div>
     <div class="content">
-      <div class="balance mb-4">{{ formattedBalance }} ZIL</div>
-
-      <button class="btn btn-primary btn-block mb-3"  @click="$emit('new-transaction')" v-if="isOwner">
-        <i class="fas fa-exchange-alt"></i> Transaction
-      </button>
       <button href="#" class="btn btn-outline-primary text-primary btn-block" @click="$emit('add-funds')">
         <i class="fas fa-long-arrow-alt-down"></i> Add funds
       </button>
@@ -32,7 +24,7 @@ export default {
     formattedBalance() {
       return numbro(this.balance).format({ thousandSeparated: true, mantissa:3   });
     },
-    isOwner() {
+    isOwner(){
       const personal = toBech32Address(this.personalAddress);
       let found =  this.owners_list.find(owner => owner.address === personal);
 

@@ -2,10 +2,36 @@
   <div class="wallet">
     <h1 class="title">My Wallet</h1>
     <h2 class="subtitle text-white">{{ bech32Address }}</h2>
-
-    <div class="wallet-details mt-5">
-      <div class="transactions-container" v-if="!addFunds && !newTransaction">
-        <transactions-list :address="this.$route.params.address" :signatures_need="this.wallet.signatures" :network="network"></transactions-list>
+    <div
+      v-if="address"
+      class="tokens"
+    >
+      <TokenCard
+        v-for="(el, index) of tokens"
+        :key="index"
+        :selected="selectedToken && selectedToken.symbol === el.symbol"
+        :token="el"
+        :network="network"
+        :address="address"
+        @select="onSelectedToken"
+      />
+      <AddTokenCard @add="onAddToken" />
+    </div>
+    <div class="wallet-details">
+      <div class="transactions-container" v-if="!addFunds && !newTransaction && !addToken">
+        <transactions-list
+          :address="$route.params.address"
+          :signatures_need="wallet.signatures"
+          :network="network"
+          :tokens="tokens"
+          :selectedToken="selectedToken"
+        />
+        <button
+          class="btn btn-outline-primary btn-block new-tx-btn"
+          @click="onNewTransaction"
+        >
+          New Transaction
+        </button>
       </div>
       <add-funds
         :bech32="bech32Address"
@@ -13,16 +39,26 @@
         :zilliqa="zilliqa"
         v-on:cancel-add-funds="onCancelAddFunds"
         v-if="addFunds"
-      ></add-funds>
-      <new-transaction :zilliqa="zilliqa" :address="address" v-on:cancel-new-transaction="onCancelNewTransaction" v-if="newTransaction"></new-transaction>
+      />
+      <add-token
+        v-if="addToken"
+        :wallet="address"
+        v-on:cancel-add-token="onCancelAddToekn"
+      />
+      <new-transaction
+        :zilliqa="zilliqa"
+        :address="address"
+        :token="selectedToken"
+        v-on:cancel-new-transaction="onCancelNewTransaction"
+        v-if="newTransaction && selectedToken"
+      />
       <div class="sidebar">
         <contract-actions
           :balance="wallet.balance"
           :owners_list="wallet.owners_list"
           class="mb-4"
           v-on:add-funds="onAddFunds"
-          v-on:new-transaction="onNewTransaction"
-        ></contract-actions>
+        />
         <contract-owners :owners="wallet.owners_list" :signatures="wallet.signatures"></contract-owners>
       </div>
     </div>
@@ -31,13 +67,16 @@
 
 <script>
 import Swal from "sweetalert2";
-import { mapGetters } from "vuex";
+import { mapGetters, mapState } from "vuex";
 
 import { Zilliqa } from "@zilliqa-js/zilliqa";
 import { toBech32Address, fromBech32Address } from "@zilliqa-js/crypto";
 
 import TransactionsList from "@/components/TransactionsList";
 import AddFunds from "@/components/AddFunds";
+import AddToken from "@/components/AddToken";
+import AddTokenCard from "@/components/AddTokenCard";
+import TokenCard from "@/components/TokenCard";
 
 import ContractActions from "@/components/Wallet/ContractActions";
 import ContractOwners from "@/components/Wallet/ContractOwners";
@@ -51,11 +90,15 @@ export default {
     ContractActions,
     ContractOwners,
     AddFunds,
+    AddToken,
+    AddTokenCard,
+    TokenCard,
     NewTransaction
   },
   data() {
     return {
       zilliqa: null,
+      selectedToken: null,
       init: null,
       address: null,
       bech32Address: null,
@@ -65,10 +108,14 @@ export default {
         signatures: null
       },
       addFunds: false,
+      addToken: false,
       newTransaction: false
     };
   },
   computed: {
+    ...mapState('general', [
+      'tokens'
+    ]),
     ...mapGetters("general", {
       network: "selectedNetwork",
       personalAddress: "personalAddress",
@@ -79,16 +126,38 @@ export default {
     })
   },
   methods: {
+    onSelectedToken(token) {
+      this.selectedToken = token;
+      this.addFunds = false;
+      this.addToken = false;
+    },
+    onNewTransaction() {
+      this.newTransaction = true;
+
+      if (!this.selectedToken) {
+        const [zilliqa] = this.tokens;
+
+        this.selectedToken = zilliqa;
+      }
+    },
     onAddFunds() {
       this.newTransaction = false;
       this.addFunds = true;
+      this.addToken = false;
+    },
+    onAddToken() {
+      this.newTransaction = false;
+      this.addFunds = false;
+      this.addToken = true;
+      this.selectedToken = null;
     },
     onCancelAddFunds() {
       this.addFunds = false;
     },
-    onNewTransaction() {
+    onCancelAddToekn() {
+      this.newTransaction = false;
       this.addFunds = false;
-      this.newTransaction = true;
+      this.addToken = false;
     },
     onCancelNewTransaction() {
       this.newTransaction = false;
@@ -96,7 +165,11 @@ export default {
   },
   async mounted() {
     try {
-      this.zilliqa = new Zilliqa(this.network.url);
+      if (this.network.name === "ZilPay") {
+        this.zilliqa = window['zilPay'];
+      } else {
+        this.zilliqa = new Zilliqa(this.network.url);
+      }
 
       let address = this.$route.params.address;
 
@@ -107,7 +180,6 @@ export default {
         this.bech32Address = toBech32Address(address);
         this.address = address;
       }
-
 
       const contract = await this.zilliqa.blockchain.getSmartContractInit(
         this.address
@@ -155,3 +227,30 @@ export default {
   }
 };
 </script>
+
+
+<style lang="scss">
+.tokens {
+  display: flex;
+  flex-wrap: wrap;
+  padding-bottom: 50px;
+}
+
+.wallet-details {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.sidebar {
+  max-width: 300px;
+}
+.new-tx-btn {
+  max-width: 280px;
+}
+@media only screen and (max-width: 1300px) {
+  .sidebar {
+    margin-top: 2rem;
+  }
+}
+</style>

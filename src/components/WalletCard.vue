@@ -109,6 +109,10 @@ export default {
     }
   },
   async mounted() {
+    if (this.network.name === "ZilPay") {
+      this.zilliqa = window['zilPay'];
+    }
+
     if (this.zilliqa !== undefined) {
       const state = await this.zilliqa.blockchain.getSmartContractState(this.wallet.contractId);
 

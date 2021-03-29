@@ -204,14 +204,17 @@
 
 <script>
 import NetworkSelector from "./components/NetworkSelector";
-import { mapGetters } from "vuex";
+import { mapGetters, mapMutations, mapState } from "vuex";
 
 import LoginModal from "@/components/LoginModal";
 import SignModal from "@/components/SignModal";
 import VideoModal from "@/components/VideoModal";
 
+import ZIlpayMixin from '@/mixins/zilpay';
+
 export default {
   name: "App",
+  mixins: [ZIlpayMixin],
   components: {
     NetworkSelector,
     LoginModal,
@@ -228,9 +231,12 @@ export default {
     };
   },
   computed: {
-    ...mapGetters("general", {
-      isLogged: "isLogged"
-    }),
+    ...mapState("general", [
+      "network"
+    ]),
+    ...mapGetters("general", [
+      'isLogged'
+    ]),
     loggedIn() {
       if (
         this.isLogged === true &&
@@ -243,6 +249,10 @@ export default {
     }
   },
   methods: {
+    ...mapMutations("general", [
+      'setNetwork',
+      'setAddress'
+    ]),
     onCloseSign() {
       this.signModal = false;
     },
@@ -253,6 +263,58 @@ export default {
       let menu = document.querySelector("#nav"); // Using a class instead, see note below.
       if (menu !== undefined && menu !== null) {
         menu.classList.toggle("active");
+      }
+    },
+    async zilPaySign() {
+      try {
+        const zilPay = await this.__getZilPay();
+
+        this.signTx.version = undefined;
+
+        const tx = await zilPay.wallet.sign(this.signTx);
+        const observable = zilPay.wallet.observableTransaction(tx.TranID).subscribe(() => {
+          EventBus.$emit('sign-success', {
+            ledger: false,
+            tx: tx,
+            id: tx.TranID
+          });
+          observable.unsubscribe();
+        });
+      } catch (err) {
+        alert('ZIlPay: ' + err);
+        EventBus.$emit('sign-success', {
+          ledger: false,
+          tx: null,
+          id: null,
+          error: err
+        });
+      }
+    },
+    async zilpayLogin() {
+      try {
+        const zilPay = await this.__getZilPay();
+        const isConnected = await zilPay.wallet.connect();
+
+        if (!isConnected) {
+          return null;
+        }
+
+        this.setNetwork({
+          name: 'ZilPay',
+          url: '',
+          chainId: 1,
+          msgVersion: 1
+        });
+
+        this.$store.dispatch("general/login", {
+          login_type: this.loginType,
+          address: zilPay.wallet.defaultAccount.base16
+        });
+        zilPay.wallet.observableAccount().subscribe((account) => {
+          this.setAddress(account.base16);
+        });
+      } catch {
+        alert('ZilPay is not installed');
       }
     }
   },
@@ -269,9 +331,25 @@ export default {
       top.location = self.location;
     }
 
+    if (this.network.name === 'ZilPay') {
+      this
+        .__getZilPay()
+        .then((zilPay) => {
+          console.log('zilPay isUnlock', zilPay.wallet.isEnable)
+          zilPay.wallet.observableAccount().subscribe((account) => {
+            this.setAddress(account.base16);
+          });
+        })
+    }
+
     EventBus.$on("sign-event", txParams => {
       this.signTx = txParams;
-      this.signModal = true;
+
+      if (this.network.name === "ZilPay") {
+        this.zilPaySign();
+      } else {
+        this.signModal = true;
+      }
     });
 
     EventBus.$on("video-event", () => {
@@ -294,7 +372,12 @@ export default {
 
     EventBus.$on("login-event", loginType => {
       this.loginType = loginType;
-      this.loginModal = true;
+
+      if (loginType === 'zilpay') {
+        this.zilpayLogin();
+      } else {
+        this.loginModal = true;
+      }
     });
 
     EventBus.$on("login-success", ({ keystore, address }) => {

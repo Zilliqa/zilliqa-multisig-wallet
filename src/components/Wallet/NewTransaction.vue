@@ -1,40 +1,83 @@
 <template>
   <div class="add-funds-form" v-if="!isSuccess">
-    <h2 class="subtitle mb-5">New Transaction</h2>
-
-    <div class="big-form mb-5">
-      Destination:
-      <div class="d-flex flex-column">
-        <input type="text" class="d-block" v-model="destination" @change="checkAddress" />
-        <div class="text-danger" v-if="destinationError">{{ destinationError }}</div>
-      </div>
-      Amount (ZIL):
-      <input type="number" min="0" v-model="amount" @change="checkAmount" />
-    </div>
-
+    <h2 class="subtitle mb-4">New Transaction</h2>
+    <b-dropdown
+      id="dropdown-aria"
+      :text="selectedMethod"
+      class="mb-2"
+      v-if="token.symbol !== 'ZIL'"
+    >
+      <b-dropdown-item
+        v-for="(m, index) of methods"
+        :key="index"
+        :active="selectedMethod === m"
+        @click="selectedMethod = m"
+      >
+        {{ m }}
+      </b-dropdown-item>
+    </b-dropdown>
+    <Transfer
+      v-if="selectedMethod === methods.Transfer"
+      v-model="tranferModel"
+      :symbol="token.symbol"
+    />
+    <TransferFrom
+      v-if="selectedMethod === methods.TransferFrom"
+      v-model="tranferFromModel"
+      :symbol="token.symbol"
+    />
+    <Mint
+      v-if="selectedMethod === methods.Mint"
+      v-model="mintModel"
+      :symbol="token.symbol"
+    />
+    <Burn
+      v-if="selectedMethod === methods.Burn"
+      v-model="burnModel"
+      :symbol="token.symbol"
+    />
+    <Allowance
+      v-if="selectedMethod === methods.DecreaseAllowance"
+      v-model="decreaseAllowanceModel"
+      :symbol="token.symbol"
+    />
+    <Allowance
+      v-if="selectedMethod === methods.IncreaseAllowance"
+      v-model="increaseAllowanceModel"
+      :symbol="token.symbol"
+    />
     <h2 class="subtitle toggle-advanced-options mb-4" @click="toggleAdvancedOptions">
-      Advanced options <i class="fas fa-chevron-down"></i>
+      Advanced options <i class="fas fa-chevron-down" />
     </h2>
-
     <div class="advanced-options d-none mb-5">
-      <div class="option">
-        Gas price:
-        <input type="number" v-model="gasPrice" />
-      </div>
-      <div class="option">
-        Gas limit:
-        <input type="number" v-model="gasLimit" />
-      </div>
-      <div class="option">
-        Tag:
-        <input type="text" v-model="tag" />
+      <Gas v-model="gas"/>
+      <div
+        v-if="token.symbol === 'ZIL'"
+        class="input-group mb-3"
+      >
+        <div class="input-group-prepend">
+          <span class="input-group-text" id="basic-addon1">
+            Tag
+          </span>
+        </div>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Teg transition"
+          aria-label="Teg transition"
+          v-model="tag"
+        >
       </div>
     </div>
-
     <div class="buttons">
       <div v-if="isLoading" class="text-white">Please wait while the transaction is deployed.</div>
       <div v-if="!isLoading && !isSuccess">
-        <button class="btn btn-primary mr-4" @click="proceed">Submit</button>
+        <button
+          class="btn btn-primary mr-4"
+          @click="proceed"
+        >
+          Submit
+        </button>
         <button class="btn btn-outline-secondary" @click="$emit('cancel-new-transaction')">
           Cancel
         </button>
@@ -52,46 +95,279 @@
 
 <script>
 import Swal from 'sweetalert2';
-import { validation, units, bytes, BN, Long } from '@zilliqa-js/util';
+import Big from 'big.js';
+
+import { bytes, BN, Long } from '@zilliqa-js/util';
 import { fromBech32Address } from '@zilliqa-js/crypto';
+
 import { mapGetters } from 'vuex';
+
+import { BDropdown, BDropdownItem } from 'bootstrap-vue';
 import SuccessScreen from '@/components/SuccessScreen';
 import ViewblockLink from '@/components/ViewblockLink';
+import Gas from '@/components/Gas';
+import Transfer from '@/components/transfer/Transfer';
+import TransferFrom from '@/components/transfer/TransferFrom';
+import Mint from '@/components/transfer/Mint';
+import Burn from '@/components/transfer/Burn';
+import Allowance from '@/components/transfer/Allowance';
+
+Big.PE = 99;
+
+const methods = {
+  IncreaseAllowance: 'IncreaseAllowance',
+  DecreaseAllowance: 'DecreaseAllowance',
+  Transfer: 'Transfer',
+  TransferFrom: 'TransferFrom',
+  Burn: 'Burn',
+  Mint: 'Mint'
+};
 
 export default {
   name: 'NewTransaction',
   data() {
     return {
-      destination: null,
+      methods,
+      selectedMethod: methods.Transfer,
       destinationError: false,
-      amount: 0,
-      gasPrice: 1000000000,
       tag: '',
-      gasLimit: 50000,
       isLoading: false,
-      isSuccess: false
+      isSuccess: false,
+      gas: {
+        gasPrice: 2000000000,
+        gasLimit: 5000
+      },
+      burnModel: {
+        amount: 0,
+        burnAccount: null
+      },
+      mintModel: {
+        amount: 0,
+        recipient: null
+      },
+      tranferModel: {
+        amount: 0,
+        destination: null
+      },
+      tranferFromModel: {
+        amount: 0,
+        destination: null,
+        from: null
+      },
+      decreaseAllowanceModel: {
+        amount: 0,
+        spender: null
+      },
+      increaseAllowanceModel: {
+        amount: 0,
+        spender: null
+      }
     };
   },
   components: {
     SuccessScreen,
-    ViewblockLink
+    Gas,
+    ViewblockLink,
+    Transfer,
+    Allowance,
+    TransferFrom,
+    Mint,
+    Burn,
+    BDropdown,
+    BDropdownItem
   },
-  props: ['zilliqa', 'address'],
+  props: ['zilliqa', 'address', 'token'],
   computed: {
     ...mapGetters('general', {
       network: 'selectedNetwork'
-    })
+    }),
+    data() {
+      let _amount;
+      let value;
+      const _decimals = Big(10).pow(Number(this.token.decimals));
+
+      if (this.token.symbol === 'ZIL') {
+        const _amount = Big(this.tranferModel.amount);
+        value = _amount.mul(_decimals).round();
+
+        return JSON.stringify({
+          _tag: 'SubmitNativeTransaction',
+          params: [
+            {
+              vname: 'recipient',
+              type: 'ByStr20',
+              value: fromBech32Address(this.tranferModel.destination).toLowerCase()
+            },
+            {
+              vname: 'amount',
+              type: 'Uint128',
+              value: String(value)
+            },
+            {
+              vname: 'tag',
+              type: 'String',
+              value: `${this.tag}`
+            }
+          ]
+        });
+      }
+
+      switch (this.selectedMethod) {
+        case methods.IncreaseAllowance:
+          _amount = Big(this.increaseAllowanceModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomIncreaseAllowanceTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'spender',
+                type: 'ByStr20',
+                value: fromBech32Address(this.increaseAllowanceModel.spender).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        case methods.DecreaseAllowance:
+          _amount = Big(this.decreaseAllowanceModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomDecreaseAllowanceTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'spender',
+                type: 'ByStr20',
+                value: fromBech32Address(this.decreaseAllowanceModel.spender).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        case methods.Transfer:
+          _amount = Big(this.tranferModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomTransferTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'to',
+                type: 'ByStr20',
+                value: fromBech32Address(this.tranferModel.destination).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        case methods.TransferFrom:
+          _amount = Big(this.tranferFromModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomTransferFromTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'from',
+                type: 'ByStr20',
+                value: fromBech32Address(this.tranferFromModel.from).toLowerCase()
+              },
+              {
+                vname: 'to',
+                type: 'ByStr20',
+                value: fromBech32Address(this.tranferFromModel.destination).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        case methods.Burn:
+          _amount = Big(this.burnModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomBurnTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'burn_account',
+                type: 'ByStr20',
+                value: fromBech32Address(this.burnModel.burnAccount).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        case methods.Mint:
+          _amount = Big(this.mintModel.amount);
+          value = _amount.mul(_decimals).round();
+
+          return JSON.stringify({
+            _tag: 'SubmitCustomMintTransaction',
+            params: [
+              {
+                vname: 'proxyTokenContract',
+                type: 'ByStr20',
+                value: String(this.token.address).toLowerCase()
+              },
+              {
+                vname: 'recipient',
+                type: 'ByStr20',
+                value: fromBech32Address(this.mintModel.recipient).toLowerCase()
+              },
+              {
+                vname: 'amount',
+                type: 'Uint128',
+                value: String(value)
+              }
+            ]
+          });
+        default:
+          return '';
+      }
+    }
   },
   methods: {
-    checkAddress() {
-      const address = this.destination;
-      this.destinationError = false;
-
-      if (!validation.isAddress(address) && !validation.isBech32(address)) {
-        this.destination = null;
-        this.destinationError = `${address} is not a correct Zilliqa address.`;
-      }
-    },
     checkAmount() {
       if (this.amount <= -1) {
         this.amount = 0;
@@ -104,34 +380,15 @@ export default {
     },
     async proceed() {
       this.isLoading = true;
+
       const VERSION = bytes.pack(this.network.chainId, this.network.msgVersion);
-
-      let destination = this.destination;
-
-      if (validation.isBech32(destination)) {
-        destination = fromBech32Address(destination);
-      }
-
-      let amount = units.toQa(this.amount, units.Units.Zil);
-
       let tx = this.zilliqa.transactions.new({
         version: VERSION,
         toAddr: this.address,
         amount: new BN(0),
-        gasPrice: new BN(this.gasPrice),
-        gasLimit: Long.fromNumber(this.gasLimit),
-        data: JSON.stringify({
-          _tag: 'SubmitTransaction',
-          params: [
-            {
-              vname: 'recipient',
-              type: 'ByStr20',
-              value: `${destination}`
-            },
-            { vname: 'amount', type: 'Uint128', value: `${amount}` },
-            { vname: 'tag', type: 'String', value: `${this.tag}` }
-          ]
-        })
+        gasPrice: new BN(this.gas.gasPrice),
+        gasLimit: Long.fromNumber(this.gas.gasLimit),
+        data: this.data
       });
 
       EventBus.$emit('sign-event', tx);
@@ -140,8 +397,12 @@ export default {
     },
     viewblock(txid) {
       let link = `https://viewblock.io/zilliqa/tx/${txid}`;
+
+      if (this.network.name === "ZilPay") {
+        link += `?network=${this.zilliqa.wallet.net}`;
+      }
       
-      if(this.network.url === 'https://dev-api.zilliqa.com') {
+      if (this.network.url === 'https://dev-api.zilliqa.com') {
         link += '?network=testnet';
       }
 
@@ -150,7 +411,14 @@ export default {
   },
   async mounted() {
     EventBus.$on('sign-success', async tx => {
-      if (tx.ledger !== true) {
+      if (tx.error) {
+        Swal.fire({
+          type: 'Error',
+          html: 'tx.error'
+        }).then(() => {
+          window.location.reload();
+        });
+      } else if (tx.ledger !== true) {
         if (tx.id !== undefined && tx.receipt.success === true) {
           Swal.fire({
             type: 'success',
@@ -179,5 +447,11 @@ export default {
 <style lang="scss" scoped>
 .toggle-advanced-options {
   cursor: pointer;
+  font-size: 14px;
+}
+
+.advanced-options {
+  display: flex;
+  flex-direction: column;
 }
 </style>

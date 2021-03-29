@@ -1,6 +1,3 @@
-import {toBech32Address} from '@zilliqa-js/crypto';
-
-
 /* 
     Wallet: {
         contractId: Address, 

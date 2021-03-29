@@ -2,11 +2,19 @@
   <div class="add-funds-form" v-if="!isSuccess">
     <h2 class="subtitle mb-5">Add funds</h2>
 
-    <div class="big-form mb-5">
-      Wallet address:
-      <input type="text" :value="bech32" disabled />
-      Amount (ZIL):
-      <input type="number" min="0" @change="checkAmount" v-model="amount" />
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">
+          ZIL
+        </span>
+      </div>
+      <input
+        class="form-control"
+        placeholder="Wallet address"
+        type="number"
+        v-model="amount"
+        @change="checkAmount"
+      >
     </div>
 
     <h2 class="subtitle toggle-advanced-options mb-4" @click="toggleAdvancedOptions">
@@ -14,18 +22,13 @@
     </h2>
 
     <div class="advanced-options d-none mb-5">
-      <div class="option">
-        Gas price:
-        <input type="number" v-model="gasPrice" />
-      </div>
-      <div class="option">
-        Gas limit:
-        <input type="number" v-model="gasLimit" />
-      </div>
+      <Gas v-model="gas"/>
     </div>
 
     <div class="buttons">
-      <div v-if="isLoading" class="text-white">Please wait while the transaction is deployed.</div>
+      <div v-if="isLoading" class="loading text-white">
+        <i class="fas fa-spinner fa-spin"></i> Please wait while the transaction is confirming.
+      </div>
       <div v-if="!isLoading && !isSuccess">
         <button class="btn btn-primary mr-4" @click="proceed">Submit</button>
         <button class="btn btn-outline-secondary" @click="$emit('cancel-add-funds')">Cancel</button>
@@ -54,6 +57,7 @@ import { bytes, BN, Long, units } from '@zilliqa-js/util';
 
 import SuccessScreen from '@/components/SuccessScreen';
 import ViewblockLink from '@/components/ViewblockLink';
+import Gas from '@/components/Gas';
 
 export default {
   name: 'AddFunds',
@@ -61,8 +65,10 @@ export default {
   data() {
     return {
       amount: 0,
-      gasPrice: 1000000000,
-      gasLimit: 2000,
+      gas: {
+        gasPrice: 2000000000,
+        gasLimit: 5000
+      },
       isLoading: false,
       isSuccess: false,
       txId: null
@@ -70,7 +76,8 @@ export default {
   },
   components: {
     SuccessScreen,
-    ViewblockLink
+    ViewblockLink,
+    Gas
   },
   computed: {
     ...mapGetters('general', {
@@ -97,8 +104,8 @@ export default {
         version: VERSION,
         toAddr: this.address,
         amount: new BN(units.toQa(this.amount, units.Units.Zil)),
-        gasPrice: new BN(this.gasPrice),
-        gasLimit: Long.fromNumber(this.gasLimit),
+        gasPrice: new BN(this.gas.gasPrice),
+        gasLimit: Long.fromNumber(this.gas.gasLimit),
         data: JSON.stringify({
           _tag: 'AddFunds',
           params: []
@@ -107,7 +114,7 @@ export default {
 
       EventBus.$emit('sign-event', tx);
 
-      this.isLoading = false;
+      // this.isLoading = false;
     },
     async checkForHash(hash) {
       const cid = await this.zilliqa.blockchain.getContractAddressFromTransactionID(hash);
@@ -120,6 +127,10 @@ export default {
     },
     viewblock(txid) {
       let link = `https://viewblock.io/zilliqa/tx/${txid}`;
+
+      if (this.network.name === "ZilPay") {
+        link += `?network=${this.zilliqa.wallet.net}`;
+      }
       
       if(this.network.url === 'https://dev-api.zilliqa.com') {
         link += '?network=testnet';
@@ -129,36 +140,43 @@ export default {
     }
   },
   async mounted() {
-    EventBus.$on('sign-success', async tx => {
-      if (tx.ledger !== true) {
-        if (tx.id !== undefined && tx.receipt.success === true) {
-          Swal.fire({
-            type: 'success',
-            html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(tx.id)}">${tx.id}</a>`
-          }).then(() => {
-            window.location.reload();
-          });
+    EventBus.$on('sign-success', async (data) => {
+      try {
+        if (data.ledger !== true) {
+          const tx = await this.zilliqa.blockchain.getTransaction(data.id);
+
+          if (tx && tx.receipt && tx.receipt.success === true) {
+            Swal.fire({
+              type: 'success',
+              html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(data.id)}">${data.id}</a>`
+            }).then(() => {
+              window.location.reload();
+            });
+          }
+        } else {
+          if (data.id) {
+            Swal.fire({
+              type: 'success',
+              html: `Transaction has been Rejected sent <a target="_blank" href="${this.viewblock(data.id)}">${data.id}</a>`
+            }).then(() => {
+              window.location.reload();
+            });
+          }
         }
-      } else {
-        if (tx.id !== undefined) {
-          Swal.fire({
-            type: 'success',
-            html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(tx.id)}">${tx.id}</a>`
-          }).then(() => {
-            window.location.reload();
-          });
-        }
+      } catch {
+        //
       }
+      this.isLoading = false;
     });
   }
 };
 </script>
 
 <style lang="scss" scoped>
-.advanced-options {
-  margin-bottom: 2rem;
+.toggle-advanced-options {
+  cursor: pointer;
+  font-size: 14px;
 }
-
 .toggle-advanced-options {
   cursor: pointer;
 }

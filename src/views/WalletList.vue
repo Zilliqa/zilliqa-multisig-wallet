@@ -59,7 +59,11 @@ export default {
     }
   },
   beforeMount() {
-    this.zilliqa = new Zilliqa(this.network.url);
+    if (this.network.name === "ZilPay") {
+      this.zilliqa = window['zilPay'];
+    } else {
+      this.zilliqa = new Zilliqa(this.network.url);
+    }
   }
 };
 </script>
