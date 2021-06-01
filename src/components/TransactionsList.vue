@@ -90,14 +90,16 @@ export default {
       }
       const { result } = await this.zilliqa.blockchain.getSmartContractState(address);
 
+      console.log(result)
+
       if (result && result.transactions && result.signatures && result.signature_counts) {
         const transactions = Object.keys(result.transactions).map((key) =>({
           key: key,
-          token: result.transactions[key].constructor === 'NativeTransaction'
+          token: result.transactions[key].constructor.includes('NativeTransaction')
             ? this.tokens[0] : this.tokens.find(
             (t) => String(t.address).toLowerCase() === String(result.transactions[key].arguments[0]).toLowerCase()
           ),
-          type: result.transactions[key].constructor,
+          type: result.transactions[key].constructor.split('.')[1],
           destination: result.transactions[key].arguments[0],
           amount: result.transactions[key].arguments[1],
           third: result.transactions[key].arguments[2],
@@ -120,7 +122,8 @@ export default {
     }
 
     await this.load();
-    this.onFilter();
+
+    console.log(this.list)
   }
 };
 </script>
