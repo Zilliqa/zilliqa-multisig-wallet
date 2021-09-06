@@ -90,8 +90,6 @@ export default {
       }
       const { result } = await this.zilliqa.blockchain.getSmartContractState(address);
 
-      console.log(result)
-
       if (result && result.transactions && result.signatures && result.signature_counts) {
         const transactions = Object.keys(result.transactions).map((key) =>({
           key: key,

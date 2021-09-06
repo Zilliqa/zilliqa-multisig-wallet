@@ -381,17 +381,21 @@ export default {
     async proceed() {
       this.isLoading = true;
 
-      const VERSION = bytes.pack(this.network.chainId, this.network.msgVersion);
-      let tx = this.zilliqa.transactions.new({
-        version: VERSION,
-        toAddr: this.address,
-        amount: new BN(0),
-        gasPrice: new BN(this.gas.gasPrice),
-        gasLimit: Long.fromNumber(this.gas.gasLimit),
-        data: this.data
-      });
+      try {
+        const VERSION = bytes.pack(this.network.chainId, this.network.msgVersion);
+        let tx = this.zilliqa.transactions.new({
+          version: VERSION,
+          toAddr: this.address,
+          amount: new BN(0),
+          gasPrice: new BN(this.gas.gasPrice),
+          gasLimit: Long.fromNumber(this.gas.gasLimit),
+          data: this.data
+        });
 
-      EventBus.$emit('sign-event', tx);
+        EventBus.$emit('sign-event', tx);
+      } catch {
+        //
+      }
 
       this.isLoading = false;
     },
