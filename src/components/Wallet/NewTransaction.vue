@@ -70,7 +70,7 @@
       </div>
     </div>
     <div class="buttons">
-      <div v-if="isLoading" class="text-white">Please wait while the transaction is deployed.</div>
+      <div v-if="isLoading" class="text-white"><i class="fas fa-spinner fa-spin"></i>Please wait while the transaction is deployed.</div>
       <div v-if="!isLoading && !isSuccess">
         <button
           class="btn btn-primary mr-4"
@@ -182,7 +182,6 @@ export default {
       network: 'selectedNetwork'
     }),
     data() {
-      let _amount;
       let value;
       const _decimals = Big(10).pow(Number(this.token.decimals));
 
@@ -191,7 +190,7 @@ export default {
         value = _amount.mul(_decimals).round();
 
         return JSON.stringify({
-          _tag: 'SubmitNativeTransaction',
+          _tag: 'SubmitTransaction',
           params: [
             {
               vname: 'recipient',
@@ -211,160 +210,7 @@ export default {
           ]
         });
       }
-
-      switch (this.selectedMethod) {
-        case methods.IncreaseAllowance:
-          _amount = Big(this.increaseAllowanceModel.amount);
-          value = _amount.mul(_decimals).round();
-
-          return JSON.stringify({
-            _tag: 'SubmitCustomIncreaseAllowanceTransaction',
-            params: [
-              {
-                vname: 'proxyTokenContract',
-                type: 'ByStr20',
-                value: String(this.token.address).toLowerCase()
-              },
-              {
-                vname: 'spender',
-                type: 'ByStr20',
-                value: fromBech32Address(this.increaseAllowanceModel.spender).toLowerCase()
-              },
-              {
-                vname: 'amount',
-                type: 'Uint128',
-                value: String(value)
-              }
-            ]
-          });
-        case methods.DecreaseAllowance:
-          _amount = Big(this.decreaseAllowanceModel.amount);
-          value = _amount.mul(_decimals).round();
-
-          return JSON.stringify({
-            _tag: 'SubmitCustomDecreaseAllowanceTransaction',
-            params: [
-              {
-                vname: 'proxyTokenContract',
-                type: 'ByStr20',
-                value: String(this.token.address).toLowerCase()
-              },
-              {
-                vname: 'spender',
-                type: 'ByStr20',
-                value: fromBech32Address(this.decreaseAllowanceModel.spender).toLowerCase()
-              },
-              {
-                vname: 'amount',
-                type: 'Uint128',
-                value: String(value)
-              }
-            ]
-          });
-        case methods.Transfer:
-          _amount = Big(this.tranferModel.amount);
-          value = _amount.mul(_decimals).round();
-
-          return JSON.stringify({
-            _tag: 'SubmitCustomTransferTransaction',
-            params: [
-              {
-                vname: 'proxyTokenContract',
-                type: 'ByStr20',
-                value: String(this.token.address).toLowerCase()
-              },
-              {
-                vname: 'to',
-                type: 'ByStr20',
-                value: fromBech32Address(this.tranferModel.destination).toLowerCase()
-              },
-              {
-                vname: 'amount',
-                type: 'Uint128',
-                value: String(value)
-              }
-            ]
-          });
-        case methods.TransferFrom:
-          _amount = Big(this.tranferFromModel.amount);
-          value = _amount.mul(_decimals).round();
-
-          return JSON.stringify({
-            _tag: 'SubmitCustomTransferFromTransaction',
-            params: [
-              {
-                vname: 'proxyTokenContract',
-                type: 'ByStr20',
-                value: String(this.token.address).toLowerCase()
-              },
-              {
-                vname: 'from',
-                type: 'ByStr20',
-                value: fromBech32Address(this.tranferFromModel.from).toLowerCase()
-              },
-              {
-                vname: 'to',
-                type: 'ByStr20',
-                value: fromBech32Address(this.tranferFromModel.destination).toLowerCase()
-              },
-              {
-                vname: 'amount',
-                type: 'Uint128',
-                value: String(value)
-              }
-            ]
-          });
-        case methods.Burn:
-          _amount = Big(this.burnModel.amount);
-          value = _amount.mul(_decimals).round();
-
-          return JSON.stringify({
-            _tag: 'SubmitCustomBurnTransaction',
-            params: [
-              {
-                vname: 'proxyTokenContract',
-                type: 'ByStr20',
-                value: String(this.token.address).toLowerCase()
-              },
-              {
-                vname: 'burn_account',
-                type: 'ByStr20',
-                value: fromBech32Address(this.burnModel.burnAccount).toLowerCase()
-              },
-              {
-                vname: 'amount',
-                type: 'Uint128',
-                value: String(value)
-              }
-            ]
-          });
-        case methods.Mint:
-          _amount = Big(this.mintModel.amount);
-          value = _amount.mul(_decimals).round();
-
-          return JSON.stringify({
-            _tag: 'SubmitCustomMintTransaction',
-            params: [
-              {
-                vname: 'proxyTokenContract',
-                type: 'ByStr20',
-                value: String(this.token.address).toLowerCase()
-              },
-              {
-                vname: 'recipient',
-                type: 'ByStr20',
-                value: fromBech32Address(this.mintModel.recipient).toLowerCase()
-              },
-              {
-                vname: 'amount',
-                type: 'Uint128',
-                value: String(value)
-              }
-            ]
-          });
-        default:
-          return '';
-      }
+      return '';
     }
   },
   methods: {
@@ -396,8 +242,6 @@ export default {
       } catch {
         //
       }
-
-      this.isLoading = false;
     },
     viewblock(txid) {
       let link = `https://viewblock.io/zilliqa/tx/${txid}`;
@@ -415,6 +259,7 @@ export default {
   },
   async mounted() {
     EventBus.$on('sign-success', async tx => {
+      this.isLoading = true;
       if (tx.error) {
         Swal.fire({
           type: 'Error',
@@ -423,6 +268,8 @@ export default {
           window.location.reload();
         });
       } else if (tx.ledger !== true) {
+        const result = await this.zilliqa.blockchain.getTransaction(tx.id);
+        tx.receipt = result.receipt;
         if (tx.id !== undefined && tx.receipt.success === true) {
           Swal.fire({
             type: 'success',

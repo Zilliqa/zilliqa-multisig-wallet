@@ -119,27 +119,16 @@ export default {
       adv.classList.toggle('d-none');
     },
     buildOwnersTree(list) {
-      var nodes = {};
+      var nodes = [];
 
-      if (list[0] !== undefined) {
-        let address = list[0].address;
-
-        if (validation.isBech32(address)) {
-          address = fromBech32Address(address);
-        }
-
-        list.splice(0, 1);
-        nodes = {
-          constructor: 'Cons',
-          argtypes: ['ByStr20'],
-          arguments: [address, this.buildOwnersTree(list)]
-        };
-      } else {
-        nodes = {
-          constructor: 'Nil',
-          argtypes: ['ByStr20'],
-          arguments: []
-        };
+      if (list.length) {
+        list.map((row)=>{
+          let address = row.address;
+          if (validation.isBech32(address)) {
+              address = fromBech32Address(address);
+          }
+          nodes.push(address);
+        })
       }
 
       return nodes;
@@ -210,13 +199,7 @@ export default {
         if (!isGasSufficient)
           myGasPrice = new BN(minGasPrice.result);
 
-        let ownersTree = this.buildOwnersTree([...this.owners]);
-
-        const owners_list = {
-          vname: 'owners_list',
-          type: 'List ByStr20',
-          value: ownersTree
-        };
+        const ownersTree = this.buildOwnersTree([...this.owners]);
 
         const init = [
           // this parameter is mandatory for all init arrays
@@ -225,14 +208,19 @@ export default {
             type: 'Uint32',
             value: '0'
           },
-          owners_list,
+          {
+            vname: 'owners_list',
+            type: 'List ByStr20',
+            value: ownersTree
+          },
           {
             vname: 'required_signatures',
             type: 'Uint32',
             value: `${this.signatures}`
           }
         ];
-        const url = 'https://gist.githubusercontent.com/evesnow91/157f8dd20531e0cb2ab186f56fbc94c5/raw/c2001b6a4c30b34e4ca8bad49f34ef4779a8b527/zrc2-multisig-wallet.scilla';
+        console.log("init", init);
+        const url = 'https://raw.githubusercontent.com/Zilliqa/ZRC/main/reference-contracts/multisig_wallet.scilla';
         const res = await fetch(url);
         const code = await res.text();
         const tx = this.zilliqa.transactions.new({

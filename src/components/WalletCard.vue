@@ -72,9 +72,11 @@ import { mapGetters } from 'vuex';
 import numbro from 'numbro';
 import { Zilliqa } from '@zilliqa-js/zilliqa';
 import { units, BN } from '@zilliqa-js/util';
+import ZIlpayMixin from '@/mixins/zilpay';
 
 export default {
   name: 'WalletCard',
+  mixins: [ZIlpayMixin],
   data() {
     return {
       loading: true,
@@ -98,22 +100,13 @@ export default {
       this.$emit('color-wallet', {wallet: this.wallet.contractId, color});
 
       this.isOpen = false;
-    }
-  },
-  computed: {
-    ...mapGetters('general', {
-      network: 'selectedNetwork'
-    }),
-    walletColor() {
-      return `pallete-${this.wallet.color}`;
-    }
-  },
-  async mounted() {
-    if (this.network.name === "ZilPay") {
-      this.zilliqa = window['zilPay'];
-    }
-
-    if (this.zilliqa !== undefined) {
+    },
+    async loadContractState(){
+      if (this.network.name === "ZilPay") {
+        this.zilliqa = await this.__getZilPay();
+      } else {
+        this.zilliqa = new Zilliqa(this.network.url);
+      }
       const state = await this.zilliqa.blockchain.getSmartContractState(this.wallet.contractId);
 
       if (state.result !== undefined && state.error === undefined) {
@@ -125,21 +118,18 @@ export default {
         });
         this.loading = false;
       }
-    } else {
-      const zilliqa = new Zilliqa(this.network.url);
-
-      const state = await zilliqa.blockchain.getSmartContractState(this.wallet.contractId);
-
-      if (state.result !== undefined && state.error === undefined) {
-        const fbalance = units.fromQa(new BN(state.result._balance), units.Units.Zil);
-
-        this.balance = numbro(fbalance).format({
-          thousandSeparated: true,
-          mantissa: 3
-        });
-        this.loading = false;
-      }
     }
+  },
+  computed: {
+    ...mapGetters('general', {
+      network: 'selectedNetwork'
+    }),
+    walletColor() {
+      return `pallete-${this.wallet.color}`;
+    }
+  },
+  async mounted() {
+    await this.loadContractState();
   }
 };
 </script>
