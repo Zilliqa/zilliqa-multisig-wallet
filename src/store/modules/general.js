@@ -82,13 +82,13 @@ const actions = {
 
 
 const mutations = {
-    addToken(state, payload) {
-        const found = state.tokens.find((t) => t.symbol === payload.symbol);
+    // addToken(state, payload) {
+    //     const found = state.tokens.find((t) => t.symbol === payload.symbol);
 
-        if (!found) {
-            state.tokens.push(payload);
-        }
-    },
+    //     if (!found) {
+    //         state.tokens.push(payload);
+    //     }
+    // },
     setNetwork(state, payload) {
         state.network = payload;
     },
