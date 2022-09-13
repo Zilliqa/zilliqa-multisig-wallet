@@ -1,7 +1,7 @@
 <template>
   <div class="add-funds-form" v-if="!isSuccess">
     <h2 class="subtitle mb-4">New Transaction</h2>
-    <b-dropdown
+    <!-- <b-dropdown
       id="dropdown-aria"
       :text="selectedMethod"
       class="mb-2"
@@ -15,13 +15,13 @@
       >
         {{ m }}
       </b-dropdown-item>
-    </b-dropdown>
-    <Transfer
+    </b-dropdown> -->
+     <Transfer
       v-if="selectedMethod === methods.Transfer"
       v-model="tranferModel"
       :symbol="token.symbol"
     />
-    <TransferFrom
+   <!-- <TransferFrom
       v-if="selectedMethod === methods.TransferFrom"
       v-model="tranferFromModel"
       :symbol="token.symbol"
@@ -45,7 +45,7 @@
       v-if="selectedMethod === methods.IncreaseAllowance"
       v-model="increaseAllowanceModel"
       :symbol="token.symbol"
-    />
+    /> -->
     <h2 class="subtitle toggle-advanced-options mb-4" @click="toggleAdvancedOptions">
       Advanced options <i class="fas fa-chevron-down" />
     </h2>
@@ -102,25 +102,25 @@ import { fromBech32Address } from '@zilliqa-js/crypto';
 
 import { mapGetters } from 'vuex';
 
-import { BDropdown, BDropdownItem } from 'bootstrap-vue';
+// import { BDropdown, BDropdownItem } from 'bootstrap-vue';
 import SuccessScreen from '@/components/SuccessScreen';
 import ViewblockLink from '@/components/ViewblockLink';
 import Gas from '@/components/Gas';
 import Transfer from '@/components/transfer/Transfer';
-import TransferFrom from '@/components/transfer/TransferFrom';
-import Mint from '@/components/transfer/Mint';
-import Burn from '@/components/transfer/Burn';
-import Allowance from '@/components/transfer/Allowance';
+// import TransferFrom from '@/components/transfer/TransferFrom';
+// import Mint from '@/components/transfer/Mint';
+// import Burn from '@/components/transfer/Burn';
+// import Allowance from '@/components/transfer/Allowance';
 
 Big.PE = 99;
 
 const methods = {
-  IncreaseAllowance: 'IncreaseAllowance',
-  DecreaseAllowance: 'DecreaseAllowance',
+  // IncreaseAllowance: 'IncreaseAllowance',
+  // DecreaseAllowance: 'DecreaseAllowance',
   Transfer: 'Transfer',
-  TransferFrom: 'TransferFrom',
-  Burn: 'Burn',
-  Mint: 'Mint'
+  // TransferFrom: 'TransferFrom',
+  // Burn: 'Burn',
+  // Mint: 'Mint'
 };
 
 export default {
@@ -169,12 +169,12 @@ export default {
     Gas,
     ViewblockLink,
     Transfer,
-    Allowance,
-    TransferFrom,
-    Mint,
-    Burn,
-    BDropdown,
-    BDropdownItem
+    // Allowance,
+    // TransferFrom,
+    // Mint,
+    // Burn,
+    // BDropdown,
+    // BDropdownItem
   },
   props: ['zilliqa', 'address', 'token'],
   computed: {

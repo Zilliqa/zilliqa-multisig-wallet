@@ -15,7 +15,7 @@
         :address="address"
         @select="onSelectedToken"
       />
-      <AddTokenCard @add="onAddToken" />
+      <!-- <AddTokenCard @add="onAddToken" /> -->
     </div>
     <div class="wallet-details">
       <div class="transactions-container" v-if="!addFunds && !newTransaction && !addToken">
@@ -40,11 +40,11 @@
         v-on:cancel-add-funds="onCancelAddFunds"
         v-if="addFunds"
       />
-      <add-token
+      <!-- <add-token
         v-if="addToken"
         :wallet="address"
         v-on:cancel-add-token="onCancelAddToekn"
-      />
+      /> -->
       <new-transaction
         :zilliqa="zilliqa"
         :address="address"
@@ -74,8 +74,8 @@ import { toBech32Address, fromBech32Address } from "@zilliqa-js/crypto";
 
 import TransactionsList from "@/components/TransactionsList";
 import AddFunds from "@/components/AddFunds";
-import AddToken from "@/components/AddToken";
-import AddTokenCard from "@/components/AddTokenCard";
+// import AddToken from "@/components/AddToken";
+// import AddTokenCard from "@/components/AddTokenCard";
 import TokenCard from "@/components/TokenCard";
 
 import ContractActions from "@/components/Wallet/ContractActions";
@@ -90,8 +90,8 @@ export default {
     ContractActions,
     ContractOwners,
     AddFunds,
-    AddToken,
-    AddTokenCard,
+    // AddToken,
+    // AddTokenCard,
     TokenCard,
     NewTransaction
   },
@@ -145,20 +145,20 @@ export default {
       this.addFunds = true;
       this.addToken = false;
     },
-    onAddToken() {
-      this.newTransaction = false;
-      this.addFunds = false;
-      this.addToken = true;
-      this.selectedToken = null;
-    },
+    // onAddToken() {
+    //   this.newTransaction = false;
+    //   this.addFunds = false;
+    //   this.addToken = true;
+    //   this.selectedToken = null;
+    // },
     onCancelAddFunds() {
       this.addFunds = false;
     },
-    onCancelAddToekn() {
-      this.newTransaction = false;
-      this.addFunds = false;
-      this.addToken = false;
-    },
+    // onCancelAddToekn() {
+    //   this.newTransaction = false;
+    //   this.addFunds = false;
+    //   this.addToken = false;
+    // },
     onCancelNewTransaction() {
       this.newTransaction = false;
     }
