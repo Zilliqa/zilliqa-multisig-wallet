@@ -73,12 +73,19 @@ export default {
       return this.$router.push('/');
     },
     constructOwners(list) {
-      if (list.arguments.length === 2) {
+      if (list.arguments && list.arguments.length === 2) {
         this.owners_list.push({
           address: toBech32Address(list.arguments[0])
         });
 
         return this.constructOwners(list.arguments[1]);
+      } else if(list.length && toBech32Address(list[0])) {
+        list.map((row)=>{
+          this.owners_list.push({
+            address: toBech32Address(row)
+          });
+        })
+        return true;
       }
       return null;
     },
@@ -120,7 +127,7 @@ export default {
           console.error(error);
           Swal.fire({
             type: 'error',
-            text: 'Wallet could not be imported. Please check input address.'
+            text: error
           });
         }
       } catch (error) {

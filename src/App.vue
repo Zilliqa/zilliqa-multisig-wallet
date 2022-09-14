@@ -272,11 +272,11 @@ export default {
         this.signTx.version = undefined;
 
         const tx = await zilPay.wallet.sign(this.signTx);
-        const observable = zilPay.wallet.observableTransaction(tx.TranID).subscribe(() => {
+        const observable = zilPay.wallet.observableTransaction(tx.hash).subscribe(() => {
           EventBus.$emit('sign-success', {
             ledger: false,
             tx: tx,
-            id: tx.TranID
+            id: tx.hash
           });
           observable.unsubscribe();
         });

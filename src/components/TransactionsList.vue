@@ -93,7 +93,7 @@ export default {
       if (result && result.transactions && result.signatures && result.signature_counts) {
         const transactions = Object.keys(result.transactions).map((key) =>({
           key: key,
-          token: result.transactions[key].constructor.includes('NativeTransaction')
+          token: result.transactions && result.transactions[key]
             ? this.tokens[0] : this.tokens.find(
             (t) => String(t.address).toLowerCase() === String(result.transactions[key].arguments[0]).toLowerCase()
           ),
