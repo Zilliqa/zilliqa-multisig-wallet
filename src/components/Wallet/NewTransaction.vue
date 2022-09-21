@@ -63,8 +63,8 @@
         <input
           type="text"
           class="form-control"
-          placeholder="Teg transition"
-          aria-label="Teg transition"
+          placeholder="Tag transition"
+          aria-label="Tag transition"
           v-model="tag"
         >
       </div>
