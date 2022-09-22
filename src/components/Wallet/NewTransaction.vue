@@ -63,8 +63,8 @@
         <input
           type="text"
           class="form-control"
-          placeholder="Teg transition"
-          aria-label="Teg transition"
+          placeholder="Tag transition"
+          aria-label="Tag transition"
           v-model="tag"
         >
       </div>
@@ -274,6 +274,13 @@ export default {
           Swal.fire({
             type: 'success',
             html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(tx.id)}">${tx.id}</a>`
+          }).then(() => {
+            window.location.reload();
+          });
+        } else {
+          Swal.fire({
+            type: 'error',
+            html: `Transaction has been rejected <a target="_blank" href="${this.viewblock(tx.id)}">${tx.id}</a>`
           }).then(() => {
             window.location.reload();
           });

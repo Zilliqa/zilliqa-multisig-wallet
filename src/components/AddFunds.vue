@@ -152,6 +152,13 @@ export default {
             }).then(() => {
               window.location.reload();
             });
+          } else {
+            Swal.fire({
+              type: 'error',
+              html: `Transaction has been rejected <a target="_blank" href="${this.viewblock(data.id)}">${data.id}</a>`
+            }).then(() => {
+              window.location.reload();
+            });
           }
         } else {
           if (data.id) {

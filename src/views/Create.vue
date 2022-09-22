@@ -83,6 +83,8 @@ import Gas from '@/components/Gas';
 
 import ZIlpayMixin from '@/mixins/zilpay';
 
+import CODE from '@/smartcontract/multisig_wallet.scilla.js';
+
 export default {
   name: 'CreateWallet',
   mixins: [ZIlpayMixin],
@@ -220,9 +222,9 @@ export default {
           }
         ];
         console.log("init", init);
-        const url = 'https://raw.githubusercontent.com/Zilliqa/ZRC/main/reference-contracts/multisig_wallet.scilla';
-        const res = await fetch(url);
-        const code = await res.text();
+
+        const code = CODE.toString();
+        
         const tx = this.zilliqa.transactions.new({
           code,
           version: VERSION,
