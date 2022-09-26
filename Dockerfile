@@ -1,5 +1,4 @@
-FROM node:10.16.0 as build-stage
-
+FROM node:14.20.0 as build-stage
 
 WORKDIR /app
 COPY ./package.json ./

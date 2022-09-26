@@ -1,4 +1,3 @@
-  
 language: generic
 sudo: required
 services:
@@ -38,4 +37,3 @@ deploy:
     - ./scripts/ci_build.sh
   on:
     branch: master
-
