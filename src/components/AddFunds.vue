@@ -196,7 +196,7 @@ export default {
           if (data.id) {
             Swal.fire({
               type: 'success',
-              html: `Transaction has been Rejected sent <a target="_blank" href="${this.viewblock(data.id)}">${data.id}</a>`
+              html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(data.id)}">${data.id}</a>`
             }).then(() => {
               window.location.reload();
             });
