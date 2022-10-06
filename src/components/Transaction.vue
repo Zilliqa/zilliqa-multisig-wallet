@@ -5,7 +5,7 @@
       <div class="address-text">{{ transaction.key }}</div>
     </div>
     <div class="item transfer">
-      <div class="font-weight-bold">{{ transaction.type }}</div>
+      <div class="font-weight-bold">{{ transaction.type }} <span class="badge badge-info">{{ transaction.subType }}</span> </div>
       <div class="details d-flex align-items-center">
         <div class="mr-2 address-text">{{ wallet }}</div>
         <i class="fas fa-arrow-right"></i>
@@ -90,7 +90,14 @@ export default {
     }),
     amount() {
       if (this.transaction.token.symbol !== 'ZIL') {
-        const [, amount] = this.transaction.amount.arguments;
+        let amount;
+        if(this.transaction.amount.arguments.length === 3){
+          const [,, _amount] = this.transaction.amount.arguments;
+          amount = _amount;
+        } else {
+          const [, _amount] = this.transaction.amount.arguments;
+          amount = _amount;
+        }
         const _decimals = Big(10).pow(Number(this.transaction.token.decimals));
         const _amount = Big(amount);
         const value = _amount.div(_decimals);
@@ -254,9 +261,9 @@ export default {
 
 <style lang="scss">
 .transaction {
-  max-width: 540px;
+  max-width: 590px;
 }
 .transfer {
-  max-width: 200px;
+  max-width: 250px;
 }
 </style>

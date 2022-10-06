@@ -91,20 +91,30 @@ export default {
       const { result } = await this.zilliqa.blockchain.getSmartContractState(address);
 
       if (result && result.transactions && result.signatures && result.signature_counts) {
-        const transactions = Object.keys(result.transactions).map((key) =>({
-          key: key,
-          token: result.transactions && result.transactions[key]
-            ? this.tokens[0] : this.tokens.find(
-            (t) => String(t.address).toLowerCase() === String(result.transactions[key].arguments[0]).toLowerCase()
-          ),
-          type: result.transactions[key].constructor.split('.')[1],
-          destination: result.transactions[key].arguments[0],
-          amount: result.transactions[key].arguments[1],
-          third: result.transactions[key].arguments[2],
-          signatures: result.signatures[key],
-          signatures_count: result.signature_counts[key]
-        }));
-
+        const transactions = Object.keys(result.transactions).map((key) =>{
+          const token  = this.tokens.find(
+            (t) => {
+              return String(t.address).toLowerCase() === String(result.transactions[key].arguments[0]).toLowerCase()
+            }
+          );
+          let subType;
+          if(typeof result.transactions[key].arguments[1] ==='object' && ('constructor' in result.transactions[key].arguments[1])) {
+            subType = result.transactions[key].arguments[1].constructor.split('.')[1];
+          }
+          return {
+            key: key,
+            token: result.transactions && result.transactions[key] && !token
+              ? this.tokens[0] : token,
+            type: result.transactions[key].constructor.split('.')[1],
+            subType: subType,
+            destination: result.transactions[key].arguments[0],
+            amount: result.transactions[key].arguments[1],
+            third: result.transactions[key].arguments[2],
+            signatures: result.signatures[key],
+            signatures_count: result.signature_counts[key]
+          };
+        })
+        
         this.transactions = transactions;
         this.owners = Object.keys(result.owners);
         this.signature_counts = result.signature_counts;
@@ -120,8 +130,6 @@ export default {
     }
 
     await this.load();
-
-    console.log(this.list)
   }
 };
 </script>

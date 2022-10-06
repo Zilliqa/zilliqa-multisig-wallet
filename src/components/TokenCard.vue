@@ -51,9 +51,6 @@ export default {
       }
     },
     async getBalance() {
-      // const field = 'balances';
-      // const wallet = String(this.address).toLowerCase();
-      
       try {
         if (this.token.symbol === 'ZIL') {
           const { result } = await this.zilliqa.blockchain.getBalance(this.address);
@@ -63,16 +60,20 @@ export default {
           }
 
           throw new Error();
-        }
-        // const { result } = await this.zilliqa.blockchain.getSmartContractSubState(
-        //   this.token.address,
-        //   field,
-        //   [wallet]
-        // );
+        } else {
+          const field = 'balances';
+          const wallet = String(this.address).toLowerCase();
+          const { result } = await this.zilliqa.blockchain.getSmartContractSubState(
+            this.token.address,
+            field,
+            [wallet]
+          );
 
-        // if (result && result[field] && result[field][wallet]) {
-        //   return result[field][wallet];
-        // }
+          if (result && result[field] && result[field][wallet]) {
+            return result[field][wallet];
+          }
+        }
+        
 
         return '0';
       } catch (err) {
