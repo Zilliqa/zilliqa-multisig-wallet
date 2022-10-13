@@ -47,7 +47,7 @@ export default {
     return {
       isLoading: false,
       error: false,
-      errorMsg: "Incorect token",
+      errorMsg: "Incorrect token",
       zilliqa: null,
       address: null
     };
