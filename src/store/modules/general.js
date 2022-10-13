@@ -37,7 +37,8 @@ const state = {
         name: 'Zilliqa',
         symbol: 'ZIL',
         decimals: 12
-    }]
+    }],
+    contract_version: "2.0"
 };
 
 const getters = {
@@ -49,7 +50,8 @@ const getters = {
     selectedNetwork: state => state.network,
     personalAddress: state => state.address,
     walletType: state => state.login_type,
-    getKeystore: state => state.keystore
+    getKeystore: state => state.keystore,
+    contractVersion: state => state.contract_version,
 };
 
 const actions = {
@@ -82,13 +84,18 @@ const actions = {
 
 
 const mutations = {
-    // addToken(state, payload) {
-    //     const found = state.tokens.find((t) => t.symbol === payload.symbol);
-
-    //     if (!found) {
-    //         state.tokens.push(payload);
-    //     }
-    // },
+    addToken(state, payload) {
+        const {address, name, symbol, decimals, methods, wallet} = payload;
+        const found = state.tokens.find((t) => t.symbol === symbol);
+        const foundIndex = state.tokens.findIndex((t)=> t.symbol === symbol);
+        if (!found) {
+            state.tokens.push({address, name, symbol, decimals, methods, wallet:[wallet]});
+        } else if(found && !found.wallet.includes(wallet)){
+            state.tokens[foundIndex].wallet.push(wallet);
+        }else{
+            throw new Error("Token already added.");
+        }
+    },
     setNetwork(state, payload) {
         state.network = payload;
     },

@@ -15,7 +15,7 @@
       >
     </div>
     <h3 v-if="error" class="err-message text-danger">
-      Incorect token
+      {{errorMsg}}
     </h3>
     <div class="buttons">
       <div v-if="isLoading" class="loading text-white">
@@ -47,6 +47,7 @@ export default {
     return {
       isLoading: false,
       error: false,
+      errorMsg: "Incorrect token",
       zilliqa: null,
       address: null
     };
@@ -73,6 +74,27 @@ export default {
     ...mapMutations('general', [
       'addToken'
     ]),
+    async getMethods(base16){
+      const methods = {
+        IncreaseAllowance: 'IncreaseAllowance',
+        DecreaseAllowance: 'DecreaseAllowance',
+        Transfer: 'Transfer',
+        TransferFrom: 'TransferFrom',
+        Burn: 'Burn',
+        Mint: 'Mint'
+      };
+      const scCode = await this.zilliqa.blockchain.getSmartContractCode(base16);
+
+      for(let i in methods){
+        let v = methods[i];
+        let isExist = scCode.result.code.includes(`${v}(`);
+        if(!isExist){
+          delete methods[i];
+        }
+      }
+
+      return methods;
+    },
     async getBalance(contract) {
       const field = 'balances';
       const wallet = String(this.wallet).toLowerCase();
@@ -107,16 +129,21 @@ export default {
           throw new Error();
         }
 
+        const methods = await this.getMethods(base16);
+
         this.addToken({
           address: base16,
           name,
           symbol,
-          decimals
+          decimals,  
+          methods,
+          wallet: this.wallet
         });
 
         this.$emit('cancel-add-token');
-      } catch {
+      } catch(err) {
         this.error = true;
+        this.errorMsg = err.message ? err.message: this.errorMsg;
       }
 
       this.isLoading = false;

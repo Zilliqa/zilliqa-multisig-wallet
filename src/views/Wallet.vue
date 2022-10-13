@@ -7,7 +7,7 @@
       class="tokens"
     >
       <TokenCard
-        v-for="(el, index) of tokens"
+        v-for="(el, index) of tokenList"
         :key="index"
         :selected="selectedToken && selectedToken.symbol === el.symbol"
         :token="el"
@@ -15,7 +15,7 @@
         :address="address"
         @select="onSelectedToken"
       />
-      <!-- <AddTokenCard @add="onAddToken" /> -->
+      <AddTokenCard @add="onAddToken" v-if="wallet.version === '2.0'"/>
     </div>
     <div class="wallet-details">
       <div class="transactions-container" v-if="!addFunds && !newTransaction && !addToken">
@@ -37,18 +37,20 @@
         :bech32="bech32Address"
         :address="address"
         :zilliqa="zilliqa"
+        :selectedToken="selectedToken"
         v-on:cancel-add-funds="onCancelAddFunds"
         v-if="addFunds"
       />
-      <!-- <add-token
+      <add-token
         v-if="addToken"
         :wallet="address"
-        v-on:cancel-add-token="onCancelAddToekn"
-      /> -->
+        v-on:cancel-add-token="onCancelAddToken"
+      />
       <new-transaction
         :zilliqa="zilliqa"
         :address="address"
         :token="selectedToken"
+        :walletVersion="wallet.version"
         v-on:cancel-new-transaction="onCancelNewTransaction"
         v-if="newTransaction && selectedToken"
       />
@@ -74,24 +76,26 @@ import { toBech32Address, fromBech32Address } from "@zilliqa-js/crypto";
 
 import TransactionsList from "@/components/TransactionsList";
 import AddFunds from "@/components/AddFunds";
-// import AddToken from "@/components/AddToken";
-// import AddTokenCard from "@/components/AddTokenCard";
+import AddToken from "@/components/AddToken";
+import AddTokenCard from "@/components/AddTokenCard";
 import TokenCard from "@/components/TokenCard";
 
 import ContractActions from "@/components/Wallet/ContractActions";
 import ContractOwners from "@/components/Wallet/ContractOwners";
 import NewTransaction from "@/components/Wallet/NewTransaction";
 import { units, BN, validation } from '@zilliqa-js/util';
+import ZIlpayMixin from '@/mixins/zilpay';
 
 export default {
   name: "Wallet",
+  mixins: [ZIlpayMixin],
   components: {
     TransactionsList,
     ContractActions,
     ContractOwners,
     AddFunds,
-    // AddToken,
-    // AddTokenCard,
+    AddToken,
+    AddTokenCard,
     TokenCard,
     NewTransaction
   },
@@ -105,7 +109,8 @@ export default {
       wallet: {
         balance: 0,
         owners_list: [],
-        signatures: null
+        signatures: null,
+        version: '1.0',
       },
       addFunds: false,
       addToken: false,
@@ -123,7 +128,16 @@ export default {
     }),
     ...mapGetters("wallets", {
       getWalletOwnersList: "getOwnersList"
-    })
+    }),
+    tokenList() {
+      return this.tokens.filter((t) => {
+        if (t.symbol === 'ZIL') {
+          return true;
+        }
+        
+        return t.wallet && t.wallet.includes(this.address);
+      });
+    }
   },
   methods: {
     onSelectedToken(token) {
@@ -144,21 +158,27 @@ export default {
       this.newTransaction = false;
       this.addFunds = true;
       this.addToken = false;
+
+      if (!this.selectedToken) {
+        const [zilliqa] = this.tokens;
+
+        this.selectedToken = zilliqa;
+      }
     },
-    // onAddToken() {
-    //   this.newTransaction = false;
-    //   this.addFunds = false;
-    //   this.addToken = true;
-    //   this.selectedToken = null;
-    // },
+    onAddToken() {
+      this.newTransaction = false;
+      this.addFunds = false;
+      this.addToken = true;
+      this.selectedToken = null;
+    },
     onCancelAddFunds() {
       this.addFunds = false;
     },
-    // onCancelAddToekn() {
-    //   this.newTransaction = false;
-    //   this.addFunds = false;
-    //   this.addToken = false;
-    // },
+    onCancelAddToken() {
+      this.newTransaction = false;
+      this.addFunds = false;
+      this.addToken = false;
+    },
     onCancelNewTransaction() {
       this.newTransaction = false;
     }
@@ -166,7 +186,7 @@ export default {
   async mounted() {
     try {
       if (this.network.name === "ZilPay") {
-        this.zilliqa = window['zilPay'];
+        this.zilliqa = await this.__getZilPay();
       } else {
         this.zilliqa = new Zilliqa(this.network.url);
       }
@@ -194,7 +214,15 @@ export default {
           return item.vname === "required_signatures";
         });
 
+        const contract_version = contract.result.find(item => {
+          return item.vname === "contract_version";
+        });
+
         this.init = contract.result;
+
+        if (contract_version !== undefined) {
+          this.wallet.version = contract_version.value;
+        }
 
         if (required_signatures === undefined) {
           throw "Required signatures value could not be found.";

@@ -102,12 +102,15 @@ export default {
       this.isOpen = false;
     },
     async loadContractState(){
-      if (this.network.name === "ZilPay") {
-        this.zilliqa = await this.__getZilPay();
+      let zilliqa;
+      if(this.zilliqa){
+        zilliqa = this.zilliqa;
+      }else if (this.network.name === "ZilPay") {
+        zilliqa = await this.__getZilPay();
       } else {
-        this.zilliqa = new Zilliqa(this.network.url);
+        zilliqa = new Zilliqa(this.network.url);
       }
-      const state = await this.zilliqa.blockchain.getSmartContractState(this.wallet.contractId);
+      const state = await zilliqa.blockchain.getSmartContractState(this.wallet.contractId);
 
       if (state.result !== undefined && state.error === undefined) {
         const fbalance = units.fromQa(new BN(state.result._balance), units.Units.Zil);

@@ -5,7 +5,7 @@
     <div class="input-group mb-3">
       <div class="input-group-prepend">
         <span class="input-group-text" id="basic-addon1">
-          ZIL
+          {{selectedToken.symbol}}
         </span>
       </div>
       <input
@@ -54,14 +54,13 @@
 import Swal from 'sweetalert2';
 import { mapGetters } from 'vuex';
 import { bytes, BN, Long, units } from '@zilliqa-js/util';
-
 import SuccessScreen from '@/components/SuccessScreen';
 import ViewblockLink from '@/components/ViewblockLink';
 import Gas from '@/components/Gas';
 
 export default {
   name: 'AddFunds',
-  props: ['address', 'bech32', 'zilliqa'],
+  props: ['address', 'bech32', 'zilliqa','selectedToken'],
   data() {
     return {
       amount: 0,
@@ -86,6 +85,15 @@ export default {
     })
   },
   methods: {
+    toTokenFormat(num, decimal) {
+      let s = num.toString();
+      let i = 0;
+      while (i < decimal) {
+        s = s + "0";
+        i++;
+      }
+      return s;
+    },
     checkAmount() {
       if (this.amount <= -1) {
         this.amount = 0;
@@ -99,18 +107,42 @@ export default {
     async proceed() {
       this.isLoading = true;
       const VERSION = bytes.pack(this.network.chainId, this.network.msgVersion);
-
-      let tx = this.zilliqa.transactions.new({
-        version: VERSION,
-        toAddr: this.address,
-        amount: new BN(units.toQa(this.amount, units.Units.Zil)),
-        gasPrice: new BN(this.gas.gasPrice),
-        gasLimit: Long.fromNumber(this.gas.gasLimit),
-        data: JSON.stringify({
-          _tag: 'AddFunds',
-          params: []
-        })
-      });
+      let tx;
+      if(this.selectedToken.symbol!='ZIL'){
+        tx = this.zilliqa.transactions.new({
+          version: VERSION,
+          toAddr: this.selectedToken.address,
+          amount: new BN(units.toQa(this.amount, units.Units.Zil)),
+          gasPrice: new BN(this.gas.gasPrice),
+          gasLimit: Long.fromNumber(this.gas.gasLimit),
+          data: JSON.stringify({
+            _tag: 'Transfer',
+            params: [{
+              vname: 'to',
+              type: 'ByStr20',
+              value: this.address.toLowerCase()
+            },
+            {
+              vname: 'amount',
+              type: 'Uint128',
+              value: `${this.toTokenFormat(this.amount, this.selectedToken.decimals)}`
+            }]
+          })
+        });
+      } else {
+        tx = this.zilliqa.transactions.new({
+          version: VERSION,
+          toAddr: this.address,
+          amount: new BN(units.toQa(this.amount, units.Units.Zil)),
+          gasPrice: new BN(this.gas.gasPrice),
+          gasLimit: Long.fromNumber(this.gas.gasLimit),
+          data: JSON.stringify({
+            _tag: 'AddFunds',
+            params: []
+          })
+        });
+      }
+      
 
       EventBus.$emit('sign-event', tx);
 
@@ -152,12 +184,19 @@ export default {
             }).then(() => {
               window.location.reload();
             });
+          } else {
+            Swal.fire({
+              type: 'error',
+              html: `Transaction has been rejected <a target="_blank" href="${this.viewblock(data.id)}">${data.id}</a>`
+            }).then(() => {
+              window.location.reload();
+            });
           }
         } else {
           if (data.id) {
             Swal.fire({
               type: 'success',
-              html: `Transaction has been Rejected sent <a target="_blank" href="${this.viewblock(data.id)}">${data.id}</a>`
+              html: `Transaction has been successfully sent <a target="_blank" href="${this.viewblock(data.id)}">${data.id}</a>`
             }).then(() => {
               window.location.reload();
             });
