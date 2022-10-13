@@ -44,7 +44,7 @@
       <add-token
         v-if="addToken"
         :wallet="address"
-        v-on:cancel-add-token="onCancelAddToekn"
+        v-on:cancel-add-token="onCancelAddToken"
       />
       <new-transaction
         :zilliqa="zilliqa"
@@ -174,7 +174,7 @@ export default {
     onCancelAddFunds() {
       this.addFunds = false;
     },
-    onCancelAddToekn() {
+    onCancelAddToken() {
       this.newTransaction = false;
       this.addFunds = false;
       this.addToken = false;
